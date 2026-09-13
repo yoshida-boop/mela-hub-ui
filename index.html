@@ -53,7 +53,7 @@ const yen = n => n==null||n===''||isNaN(n) ? '—' : '¥'+Math.round(Number(n)).
 const pill = s => `<span class="pill ${PILL[s]||'p-grey'}">${s||'—'}</span>`;
 const entTag = e => `<span class="ent ${e}">${e==='E01'?'mela':e==='E02'?'mela gym':e}</span>`;
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let CODE = ''; try { CODE = localStorage.getItem('melahub-code') || ''; } catch(e) {}
+let CODE = 'q3sqawj3';
 function askCode(msg){
   document.getElementById('main').innerHTML = `<div class="card" style="max-width:420px;margin:40px auto"><h2>mela 請求ハブ</h2><p class="sub">${msg || '合言葉を入力してください。台帳の「設定」シートにあります。'}</p>
     <form id="codeform" onsubmit="return false"><input id="codein" class="sel" type="password" autocomplete="current-password" placeholder="合言葉" autofocus><div class="tools" style="margin-top:10px"><button class="btn pri" id="codego">開く</button></div></form></div>`;
