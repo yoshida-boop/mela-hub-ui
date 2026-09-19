@@ -48,7 +48,8 @@ textarea.mail{width:100%;min-height:260px;border:1px solid var(--line2);border-r
 const USER = '';
 const VIEWS = [['home','今月'],['new','請求を作る'],['ar','請求の一覧'],['invoice','請求書を見る'],['dun','催促'],['ap','支払う側'],['line','LINE受信'],['settings','設定']];
 const PILL = {'作成待ち':'p-grey','確認待ち':'p-warn','作成済':'p-info','送付済':'p-info','入金済':'p-ok','未入金':'p-warn','催促中':'p-bad','取消':'p-grey','支払予定':'p-info','支払済':'p-ok'};
-const S = { view:'home', boot:null, ar:[], ap:[], line:[], dash:null, sel:null, filter:'all', busy:false };
+const _q = new URLSearchParams(location.search).get('view');
+const S = { view: ['home','new','ar','invoice','dun','ap','line','settings'].includes(_q) ? _q : 'home', boot:null, ar:[], ap:[], line:[], dash:null, sel:null, filter:'all', busy:false };
 const yen = n => n==null||n===''||isNaN(n) ? '—' : '¥'+Math.round(Number(n)).toLocaleString('ja-JP');
 const pill = s => `<span class="pill ${PILL[s]||'p-grey'}">${s||'—'}</span>`;
 const entTag = e => `<span class="ent ${e}">${e==='E01'?'mela':e==='E02'?'mela gym':e}</span>`;
