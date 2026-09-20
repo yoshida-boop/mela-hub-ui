@@ -48,8 +48,9 @@ textarea.mail{width:100%;min-height:260px;border:1px solid var(--line2);border-r
 const USER = '';
 const VIEWS = [['home','今月'],['new','請求を作る'],['ar','請求の一覧'],['invoice','請求書を見る'],['dun','催促'],['ap','支払う側'],['line','LINE受信'],['settings','設定']];
 const PILL = {'作成待ち':'p-grey','確認待ち':'p-warn','作成済':'p-info','送付済':'p-info','入金済':'p-ok','未入金':'p-warn','催促中':'p-bad','取消':'p-grey','支払予定':'p-info','支払済':'p-ok'};
-const _q = new URLSearchParams(location.search).get('view');
-const S = { view: ['home','new','ar','invoice','dun','ap','line','settings'].includes(_q) ? _q : 'home', boot:null, ar:[], ap:[], line:[], dash:null, sel:null, filter:'all', busy:false };
+const _qs = new URLSearchParams(location.search);
+const _q = _qs.get('view');
+const S = { view: ['home','new','ar','invoice','dun','ap','line','settings'].includes(_q) ? _q : 'home', boot:null, ar:[], ap:[], line:[], expenses:[], dash:null, sel:_qs.get('id')||null, filter:'all', busy:false, edit:false };
 const yen = n => n==null||n===''||isNaN(n) ? '—' : '¥'+Math.round(Number(n)).toLocaleString('ja-JP');
 const pill = s => `<span class="pill ${PILL[s]||'p-grey'}">${s||'—'}</span>`;
 const entTag = e => `<span class="ent ${e}">${e==='E01'?'mela':e==='E02'?'mela gym':e}</span>`;
@@ -73,20 +74,34 @@ function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.
 function daysLate(r){ if(!r['支払期日']) return 0; return Math.floor((new Date(S.boot.today)-new Date(r['支払期日']))/86400000); }
 const isUnpaid = r => ['送付済','未入金','催促中'].includes(r['状態']);
 
+function applyAll(d){
+  S.boot = { today:d.today, entities:d.entities, accounts:d.accounts, clients:d.clients, staff:d.staff, statuses:d.statuses, ledgerUrl:d.ledgerUrl, hubUrl:d.hubUrl, secrets:d.secrets||{} };
+  S.ar=d.ar||[]; S.ap=d.ap||[]; S.line=d.line||[]; S.expenses=d.expenses||[]; S.dash=d.dash||null;
+  document.getElementById('foot').innerHTML = `<a href="${S.boot.ledgerUrl}" target="_blank">台帳を開く</a> ／ <a href="${S.boot.hubUrl}" target="_blank">Driveを開く</a>`;
+}
+function cacheSave(d){ try{ localStorage.setItem('melahub-cache', JSON.stringify({t:Date.now(),d})); }catch(e){} }
+function cacheLoad(){ try{ const c=JSON.parse(localStorage.getItem('melahub-cache')||'null'); return c&&c.d?c:null; }catch(e){ return null; } }
+
 async function load(){
   if(!CODE) { askCode(); return; }
-  document.getElementById('main').innerHTML = '<div class="empty">読み込み中…</div>';
+  const c = cacheLoad();
+  if(c){ applyAll(c.d); render(); markStale(c.t); }
+  else document.getElementById('main').innerHTML = '<div class="empty">読み込み中…</div>';
   try{
-    try { S.boot = await call('api_bootstrap'); }
-    catch(e){ if(String(e.message||e).includes('BAD_CODE')){ CODE=''; try{localStorage.removeItem('melahub-code');}catch(_){} askCode('合言葉が違います。もう一度入力してください。'); return; } throw e; }
-    document.getElementById('foot').innerHTML = `${esc(USER||'合言葉でログイン中')}<br><a href="${S.boot.ledgerUrl}" target="_blank">台帳を開く</a> ／ <a href="${S.boot.hubUrl}" target="_blank">Driveを開く</a>`;
-    await refresh();
-  }catch(e){ document.getElementById('main').innerHTML = `<div class="note">読み込みに失敗しました: ${esc(e.message||e)}</div>`; }
+    let d;
+    try { d = await call('api_all'); }
+    catch(e){ if(!String(e.message||e).includes('unknown api')) throw e;
+      const [boot,ar,ap,dash,line]=await Promise.all([call('api_bootstrap'),call('api_receivables'),call('api_payables'),call('api_dashboard'),call('api_lineInbox')]);
+      d=Object.assign({},boot,{ar,ap,dash,line,expenses:[]}); }
+    applyAll(d); cacheSave(d); render();
+  }catch(e){
+    if(String(e.message||e).includes('BAD_CODE')){ CODE=''; try{localStorage.removeItem('melahub-code');}catch(_){} askCode('合言葉が違います。もう一度入力してください。'); return; }
+    if(!c) document.getElementById('main').innerHTML = `<div class="note">読み込みに失敗しました: ${esc(e.message||e)}</div>`;
+    else toast('最新の取得に失敗しました。表示は前回の内容です');
+  }
 }
-async function refresh(){
-  const [ar, ap, dash, line] = await Promise.all([call('api_receivables'), call('api_payables'), call('api_dashboard'), call('api_lineInbox')]);
-  S.ar = ar; S.ap = ap; S.dash = dash; S.line = line; render();
-}
+function markStale(t){ const el=document.getElementById('foot'); if(el) el.insertAdjacentHTML('afterbegin', `<div style="color:var(--mute)">更新中…</div>`); }
+async function refresh(){ return load(); }
 function counts(){ return { ar:S.ar.length, dun:S.ar.filter(r=>isUnpaid(r)&&daysLate(r)>0).length, ap:S.ap.filter(r=>['確認待ち','支払予定'].includes(r['状態'])).length, line:S.line.filter(r=>r['状態']==='未処理').length }; }
 function renderNav(){ const c=counts(); document.getElementById('nav').innerHTML = VIEWS.map(([k,l])=>`<button class="${S.view===k?'on':''}" data-v="${k}">${l}${c[k]?`<span class="cnt">${c[k]}</span>`:''}</button>`).join('');
   document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{S.view=b.dataset.v;render();}); }
@@ -165,20 +180,41 @@ async function submitNew(){
   catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); }
 }
 
+function itemRowEdit(i,n){ return `<div class="split irow2" style="gap:8px;margin-bottom:6px;grid-template-columns:2fr 90px 1fr"><input name="ename${n}" class="sel" value="${esc(i.name||'')}" placeholder="品目"><input name="eqty${n}" class="sel" type="number" min="1" step="1" value="${i.qty||1}"><input name="eunit${n}" class="sel" type="number" step="1" value="${i.unit==null?'':i.unit}" placeholder="単価（税抜）"></div>`; }
 function vInvoice(){
-  const inv=S.ar.find(r=>r['請求ID']===S.sel)||S.ar.find(r=>['確認待ち','作成済'].includes(r['状態']))||S.ar[0];
+  const inv=S.ar.find(r=>r['請求ID']===S.sel)||S.ar.find(r=>['確認待ち','作成待ち'].includes(r['状態']))||S.ar[0];
   if(!inv) return '<h1>請求書を見る</h1><div class="empty">請求がありません</div>';
-  S.sel=inv['請求ID']; const s=inv['状態']; const canPdf=inv.items&&inv.items.length&&!inv.items.some(i=>i.unit==null);
-  return `<h1>請求書を見る</h1><p class="sub">「PDFを作る」でDriveに保存し、メール送付ならinvoice@のGmailに下書きができます。送信は人が押します。</p>
-  <div class="tools"><select id="invsel" class="sel" style="width:auto;max-width:460px">${S.ar.map(r=>`<option value="${esc(r['請求ID'])}" ${r['請求ID']===inv['請求ID']?'selected':''}>${esc(r['請求ID'])}　${esc(r['取引先'])}　${yen(r['税込'])}</option>`).join('')}</select>${pill(s)}<span class="sp"></span>
+  S.sel=inv['請求ID']; const s=inv['状態']; const b=S.boot;
+  const canPdf=inv.items&&inv.items.length&&!inv.items.some(i=>i.unit==null);
+  const isDraft=['確認待ち','作成待ち'].includes(s);
+  const fromLine=String(inv['発生源']||'').startsWith('LINE');
+  const editing = S.edit || (isDraft && fromLine && S.edit!==false);
+  const items = (inv.items&&inv.items.length?inv.items:[{name:inv['件名'],qty:1,unit:inv['税抜']||null}]);
+  const form = !isDraft ? '' : `<div class="card" id="editcard"><h2>内容を確認・修正 <span style="font-weight:400;color:var(--mute);font-size:12px">${fromLine?'LINEから読み取った内容です':''}</span></h2>
+    <form id="editform" onsubmit="return false"><div class="split"><div>
+      <label class="fl">請求元<select name="entityId" class="sel">${b.entities.map(e=>`<option value="${e['法人ID']}" ${inv['法人']===e['法人ID']?'selected':''}>${esc(e['正式名'])}</option>`).join('')}</select></label>
+      <label class="fl">宛名<input name="to" class="sel" list="clients" value="${esc(inv['取引先']||'')}"></label><datalist id="clients">${[...new Set(S.boot.clients.map(c=>c['正式社名']))].filter(Boolean).map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+      <label class="fl">件名<input name="subject" class="sel" value="${esc(inv['件名']||'')}"></label>
+      <label class="fl">送付先メール<input name="mail" class="sel" value="${esc(inv['送付先メール']||'')}" placeholder="LINEで送るなら空欄"></label>
+      <div class="split"><label class="fl">送付方法<select name="via" class="sel"><option ${inv['送付経路']==='メール'?'selected':''}>メール</option><option ${inv['送付経路']==='LINE'?'selected':''}>LINE</option></select></label>
+      <label class="fl">担当<select name="staff" class="sel">${b.staff.map(x=>`<option ${inv['担当']===x?'selected':''}>${x}</option>`).join('')}</select></label></div>
+    </div><div>
+      <div class="fl" style="display:block">品目（単価は税抜）</div><div id="eitems">${items.map((i,n)=>itemRowEdit(i,n+1)).join('')}</div>
+      <button type="button" class="btn sm" id="eadditem" style="margin-bottom:10px">＋ 品目を追加</button>
+      <div class="split"><label class="fl">請求日<input name="date" class="sel" type="date" value="${esc(inv['請求日']||'')}"></label><label class="fl">支払期日<input name="due" class="sel" type="date" value="${esc(inv['支払期日']||'')}"></label></div>
+      <label class="fl">振込先<select name="accountId" class="sel">${b.accounts.map(a=>`<option value="${a['口座ID']}" ${inv['口座ID']===a['口座ID']?'selected':''}>${esc(a['名義'])}　${esc(a['口座番号'])}</option>`).join('')}</select></label>
+    </div></div>
+    <div class="tools" style="margin-top:12px"><button class="btn pri" id="esave">この内容で保存</button><span style="font-size:12px;color:var(--mute)">保存すると下の請求書に反映されます</span></div></form></div>`;
+  return `<h1>請求書を見る</h1><p class="sub">内容を直してから「PDFを作って下書きへ」。送信ボタンは人が押します。</p>
+  <div class="tools"><select id="invsel" class="sel" style="width:auto;max-width:460px">${S.ar.map(r=>`<option value="${esc(r['請求ID'])}" ${r['請求ID']===inv['請求ID']?'selected':''}>${esc(r['請求ID'])}　${esc(r['取引先'])}　${yen(r['税込'])}　${esc(r['状態'])}</option>`).join('')}</select>${pill(s)}<span class="sp"></span>
    ${canPdf?`<button class="btn pri" id="mkpdf">${s==='作成済'?'PDFと下書きを作り直す':'PDFを作って下書きへ'}</button>`:''}
    ${inv['PDF']?`<a class="btn" href="${esc(String(inv['PDF']).split('\n')[0])}" target="_blank">PDFを開く</a>`:''}
    ${inv['下書きURL']?`<a class="btn" href="${esc(inv['下書きURL'])}" target="_blank">Gmail下書きを開く</a>`:''}
    ${s==='作成済'?`<button class="btn" id="marksent">送った → 送付済にする</button>`:''}
    ${isUnpaid(inv)?`<button class="btn" id="markpaid">入金を確認した → 入金済</button>`:''}</div>
-  ${!inv.items||!inv.items.length?`<div class="note">この請求は過去にinvoyで発行した分の取り込みなので、品目データがありません。PDFはDriveの保存分を開いてください。</div>`:''}
-  ${inv.items&&inv.items.some(i=>i.unit==null)?`<div class="note">金額が未確定の品目があります。台帳の品目JSONを直すか、作り直してください。</div>`:''}
-  ${inv['送付経路']==='LINE'?`<div class="note">送付方法がLINEです。PDFを作ったら「PDFを開く」からダウンロードして送り、送付済にしてください。</div>`:''}
+  ${String(inv['メモ']||'').startsWith('LINE')?`<div class="note">${esc(inv['メモ'])}</div>`:''}
+  ${form}
+  ${!inv.items||!inv.items.length?`<div class="note">過去にinvoyで出した分の取り込みなので品目データがありません。PDFはDriveの保存分を開いてください。</div>`:''}
   <div class="paperwrap"><iframe class="paper" id="paperframe" sandbox="allow-same-origin"></iframe></div>`;
 }
 async function loadPaper(){
@@ -205,6 +241,11 @@ function vSettings(){
   ${b.entities.map(e=>`<div class="card"><h2>${entTag(e['法人ID'])}　${esc(e['正式名'])}　<span style="font-weight:400;color:var(--mute);font-size:12px">登録番号 ${esc(e['登録番号'])}　決算${esc(e['決算月'])}月</span></h2>
    <div class="tw"><table><tr><th>口座</th><th>銀行</th><th>支店</th><th class="r">番号</th><th>名義</th><th>用途</th></tr>${b.accounts.filter(a=>a['法人ID']===e['法人ID']).map(a=>`<tr><td>${esc(a['口座ID'])}</td><td>${esc(a['銀行'])}</td><td>${esc(a['支店'])}</td><td class="r">${esc(a['口座番号'])}</td><td>${esc(a['名義'])}</td><td>${esc(a['用途'])}</td></tr>`).join('')}</table></div></div>`).join('')}
   <div class="card"><h2>取引先マスタ（${b.clients.length}件）</h2><div class="tw"><table><tr><th>ID</th><th>正式社名</th><th>宛名</th><th>メール</th><th>送付</th><th>担当</th></tr>${b.clients.map(c=>`<tr><td>${esc(c['取引先ID'])}</td><td>${esc(c['正式社名'])}</td><td>${esc(c['宛名'])}</td><td>${esc(c['メール'])}</td><td>${esc(c['送付方法'])}</td><td>${esc(c['担当'])}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">請求を作ると自動で増えます</td></tr>'}</table></div></div>
+  <div class="card"><h2>AI（声・文章の読み取り）</h2>
+   <div style="font-size:13px;color:var(--ink2);margin-bottom:8px">Claude APIキーを入れると、LINEに話した内容から請求の下書きを作れるようになります。キーはこの画面から送られ、GAS側にだけ保存されます。</div>
+   <div class="split"><label class="fl">Claude APIキー（sk-ant-…）<input id="aikey" class="sel" type="password" placeholder="${b.secrets&&b.secrets.anthropic?'設定済み（変えるときだけ入力）':'未設定'}"></label>
+   <label class="fl">Gemini APIキー（音声の文字起こし用・任意）<input id="gkey" class="sel" type="password" placeholder="${b.secrets&&b.secrets.gemini?'設定済み（変えるときだけ入力）':'未設定'}"></label></div>
+   <div class="tools"><button class="btn pri" id="savekeys">保存</button><span style="font-size:12px;color:var(--mute)">Claude: ${b.secrets&&b.secrets.anthropic?'設定済み':'未設定'} ／ Gemini: ${b.secrets&&b.secrets.gemini?'設定済み':'未設定'}</span></div></div>
   <div class="card"><h2>LINE</h2><div>友だち追加ID: <b>@725ysdjf</b>（mela 請求受付）。担当者はこのIDで追加して、請求内容や領収書の写真を送るだけです。</div></div>`;
 }
 
@@ -219,6 +260,20 @@ function render(){
   const is=document.getElementById('invsel'); if(is) is.onchange=()=>{S.sel=is.value;render();};
   const ai=document.getElementById('additem'); if(ai) ai.onclick=()=>{const box=document.getElementById('itemrows');box.insertAdjacentHTML('beforeend',itemRow(box.querySelectorAll('.irow').length+1));};
   const ns=document.getElementById('newsubmit'); if(ns) ns.onclick=submitNew;
+  const ea=document.getElementById('eadditem'); if(ea) ea.onclick=()=>{ const box=document.getElementById('eitems'); box.insertAdjacentHTML('beforeend', itemRowEdit({},box.querySelectorAll('.irow2').length+1)); };
+  const es=document.getElementById('esave'); if(es) es.onclick=async()=>{
+    const f=document.getElementById('editform'); const g=n=>(f.elements[n]||{}).value||'';
+    const cnt=f.querySelectorAll('.irow2').length; const items=[];
+    for(let n=1;n<=cnt;n++){ if(g('ename'+n)) items.push({name:g('ename'+n),qty:Number(g('eqty'+n)||1),unit:g('eunit'+n)===''?null:Number(g('eunit'+n))}); }
+    busy(true);
+    try{ await call('api_updateInvoice',S.sel,{entityId:g('entityId'),to:g('to'),subject:g('subject'),mail:g('mail'),via:g('via'),staff:g('staff'),date:g('date'),due:g('due'),accountId:g('accountId'),items});
+      toast('保存しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
+  const sk=document.getElementById('savekeys'); if(sk) sk.onclick=async()=>{
+    const a=document.getElementById('aikey').value.trim(), gg=document.getElementById('gkey').value.trim();
+    busy(true);
+    try{ if(a) await call('api_setSecret','ANTHROPIC_API_KEY',a); if(gg) await call('api_setSecret','GEMINI_API_KEY',gg);
+      toast('保存しました'); document.getElementById('aikey').value=''; document.getElementById('gkey').value=''; await refresh(); }
+    catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
   const mk=document.getElementById('mkpdf'); if(mk) mk.onclick=async()=>{ busy(true); toast('PDFを作っています…'); try{ const r=await call('api_makePdfAndDraft',S.sel); toast(r.draft?'PDFとGmail下書きを作りました':'PDFを作りました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false);} };
   const ms=document.getElementById('marksent'); if(ms) ms.onclick=async()=>{ await call('api_setStatus','売掛台帳','請求ID',S.sel,'送付済'); toast('送付済にしました'); await refresh(); };
   ['markpaid','markpaid2'].forEach(id=>{ const b=document.getElementById(id); if(b) b.onclick=async()=>{ await call('api_setStatus','売掛台帳','請求ID',S.sel,'入金済'); toast('入金済にしました'); await refresh(); }; });
