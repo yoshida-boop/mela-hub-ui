@@ -44,6 +44,9 @@ textarea.mail{width:100%;min-height:260px;border:1px solid var(--line2);border-r
 .michint b{display:block;font-size:15px;color:var(--ink)}
 textarea.vt{width:100%;min-height:84px;border:1px solid var(--line2);border-radius:8px;padding:10px 12px;margin-top:12px;line-height:1.7;resize:vertical;font-size:15px}
 .ex{font-size:12px;color:var(--mute);margin-top:6px}
+.mchip{display:inline-block;background:var(--grey);border-radius:10px;padding:1px 9px;margin:2px 4px 2px 0;font-size:12px;color:var(--ink2);text-decoration:none}
+.mchip b{color:var(--ink)}
+.mchip:hover{background:var(--accbg);color:var(--acc)}
 .ex span{display:inline-block;background:var(--grey);border-radius:10px;padding:2px 9px;margin:3px 4px 0 0;cursor:pointer}
 .ex span:hover{background:var(--accbg);color:var(--acc)}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;opacity:0;transition:.2s;pointer-events:none;max-width:80vw}
@@ -58,11 +61,11 @@ textarea.vt{width:100%;min-height:84px;border:1px solid var(--line2);border-radi
 <div id="toast"></div>
 <script>
 const USER = '';
-const VIEWS = [['home','今月'],['new','請求を作る'],['ar','請求の一覧'],['invoice','請求書を見る'],['dun','催促'],['ap','支払う側'],['line','LINE受信'],['settings','設定']];
+const VIEWS = [['home','今月'],['new','請求を作る'],['ar','請求の一覧'],['invoice','請求書を見る'],['dun','催促'],['ap','支払う側'],['docs','書類'],['line','LINE受信'],['settings','設定']];
 const PILL = {'作成待ち':'p-grey','確認待ち':'p-warn','作成済':'p-info','送付済':'p-info','入金済':'p-ok','未入金':'p-warn','催促中':'p-bad','取消':'p-grey','支払予定':'p-info','支払済':'p-ok'};
 const _qs = new URLSearchParams(location.search);
 const _q = _qs.get('view');
-const S = { view: ['home','new','ar','invoice','dun','ap','line','settings'].includes(_q) ? _q : 'home', boot:null, ar:[], ap:[], line:[], expenses:[], dash:null, sel:_qs.get('id')||null, filter:'all', busy:false, edit:false };
+const S = { view: ['home','new','ar','invoice','dun','ap','docs','line','settings'].includes(_q) ? _q : 'home', boot:null, ar:[], ap:[], line:[], expenses:[], tree:null, dash:null, sel:_qs.get('id')||null, filter:'all', busy:false, edit:false };
 const yen = n => n==null||n===''||isNaN(n) ? '—' : '¥'+Math.round(Number(n)).toLocaleString('ja-JP');
 const pill = s => `<span class="pill ${PILL[s]||'p-grey'}">${s||'—'}</span>`;
 const entTag = e => `<span class="ent ${e}">${e==='E01'?'mela':e==='E02'?'mela gym':e}</span>`;
@@ -202,8 +205,9 @@ async function submitNew(){
 
 function itemRowEdit(i,n){ return `<div class="split irow2" style="gap:8px;margin-bottom:6px;grid-template-columns:2fr 90px 1fr"><input name="ename${n}" class="sel" value="${esc(i.name||'')}" placeholder="品目"><input name="eqty${n}" class="sel" type="number" min="1" step="1" value="${i.qty||1}"><input name="eunit${n}" class="sel" type="number" step="1" value="${i.unit==null?'':i.unit}" placeholder="単価（税抜）"></div>`; }
 function vInvoice(){
-  const inv=S.ar.find(r=>r['請求ID']===S.sel)||S.ar.find(r=>['確認待ち','作成待ち'].includes(r['状態']))||S.ar[0];
-  if(!inv) return '<h1>請求書を見る</h1><div class="empty">請求がありません</div>';
+  let inv = S.sel ? S.ar.find(r=>r['請求ID']===S.sel) : null;
+  if(!inv && !S.sel) inv = S.ar.find(r=>['確認待ち','作成待ち'].includes(r['状態'])) || S.ar[0];
+  if(!inv) return `<h1>請求書を見る</h1><div class="empty">${S.sel?'読み込み中…':'請求がありません'}</div>`;
   S.sel=inv['請求ID']; const s=inv['状態']; const b=S.boot;
   const canPdf=inv.items&&inv.items.length&&!inv.items.some(i=>i.unit==null);
   const isDraft=['確認待ち','作成待ち'].includes(s);
@@ -255,6 +259,19 @@ function vDun(){
     <textarea class="mail" id="dunbody" placeholder="「催促の下書きを作る」を押すと文面がここに出ます"></textarea></div></div>`}`;
 }
 
+function vDocs(){
+  const t=S.tree;
+  if(!t) return `<h1>書類</h1><p class="sub">invoice@のDriveに、法人 → 期 → 書類の種類 → 月 の順で入っています。税理士にはこのフォルダを共有すれば渡せます。</p><div class="empty">読み込み中…</div>`;
+  return `<h1>書類</h1><p class="sub">invoice@のDriveに、法人 → 期 → 書類の種類 → 月 の順で入っています。税理士にはこのフォルダごと共有すれば渡せます。</p>
+  <div class="tools"><a class="btn pri" href="${t.url}" target="_blank">Driveのフォルダを開く</a><button class="btn" id="treereload">数え直す</button></div>
+  ${t.entities.map(e=>`<div class="card"><h2><a href="${e.url}" target="_blank">${esc(e.name)}</a></h2>
+    ${e.fiscals.map(f=>`<div style="margin-bottom:12px"><div style="font-size:12px;color:var(--mute);margin-bottom:6px"><a href="${f.url}" target="_blank">${esc(f.name)}</a></div>
+      <div class="tw"><table><tr><th>書類の種類</th><th class="r">件数</th><th>月ごと</th></tr>
+      ${f.kinds.map(k=>`<tr><td><a href="${k.url}" target="_blank">${esc(k.name.replace(/^\d+_/,''))}</a></td><td class="r">${k.total}</td>
+        <td>${k.months.filter(m=>m.n).map(m=>`<a class="mchip" href="${m.url}" target="_blank">${esc(m.name)} <b>${m.n}</b></a>`).join('')||'<span style="color:var(--mute)">まだありません</span>'}</td></tr>`).join('')}
+      </table></div></div>`).join('')}</div>`).join('')}
+  <div class="note">ファイル名は「日付_取引先_内容.pdf」。日付・取引先・金額で探せるので、電子帳簿保存法の検索要件を満たします。</div>`;
+}
 function vSettings(){
   const b=S.boot;
   return `<h1>設定</h1><p class="sub">マスタは台帳スプレッドシートで直接編集できます。ここは確認用です。</p>
@@ -299,7 +316,7 @@ function busy(b){ S.busy=b; document.querySelectorAll('.btn.pri').forEach(x=>x.d
 function render(){
   renderNav();
   const m=document.getElementById('main');
-  m.innerHTML = ({home:vHome,new:vNew,ar:vAr,invoice:vInvoice,dun:vDun,ap:vAp,line:vLine,settings:vSettings})[S.view]();
+  m.innerHTML = ({home:vHome,new:vNew,ar:vAr,invoice:vInvoice,dun:vDun,ap:vAp,docs:vDocs,line:vLine,settings:vSettings})[S.view]();
   m.querySelectorAll('tr.row').forEach(tr=>tr.onclick=ev=>{ if(ev.target.closest('select,a,button')) return; S.sel=tr.dataset.id; S.view=tr.dataset.v||'invoice'; render(); });
   m.querySelectorAll('.stsel').forEach(s=>s.onchange=async()=>{ try{ await call('api_setStatus',s.dataset.sheet,s.dataset.col,s.dataset.id,s.value); toast('更新しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } });
   m.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{S.filter=b.dataset.f;render();});
@@ -338,6 +355,8 @@ function render(){
   const ms=document.getElementById('marksent'); if(ms) ms.onclick=async()=>{ await call('api_setStatus','売掛台帳','請求ID',S.sel,'送付済'); toast('送付済にしました'); await refresh(); };
   ['markpaid','markpaid2'].forEach(id=>{ const b=document.getElementById(id); if(b) b.onclick=async()=>{ await call('api_setStatus','売掛台帳','請求ID',S.sel,'入金済'); toast('入金済にしました'); await refresh(); }; });
   const md=document.getElementById('mkdun'); if(md) md.onclick=async()=>{ busy(true); try{ const r=await call('api_dunningDraft',S.sel); document.getElementById('dunbody').value=r.text; toast(r.draft?'Gmailに催促の下書きを作りました':'メール未登録のため文面だけ作りました'); if(r.draft) window.open(r.draft,'_blank'); await refresh(); document.getElementById('dunbody').value=r.text; }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false);} };
+  const tr=document.getElementById('treereload'); if(tr) tr.onclick=async()=>{ S.tree=null; render(); try{ S.tree=await call('api_driveTree'); }catch(e){ toast('失敗: '+(e.message||e)); } render(); };
+  if(S.view==='docs' && !S.tree) call('api_driveTree').then(t=>{ S.tree=t; if(S.view==='docs') render(); }).catch(()=>{});
   if(S.view==='invoice') loadPaper();
 }
 load();
