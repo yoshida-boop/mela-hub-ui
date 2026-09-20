@@ -1,41 +1,66 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>mela 請求ハブ</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>mela 経理</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
 <style>
 :root{--bg:#F6F4F1;--panel:#fff;--line:#E4E0DB;--line2:#CFC9C2;--ink:#1F1B1A;--ink2:#5B5551;--mute:#8C857F;--acc:#F05A3E;--accbg:#FDEDE8;--ok:#1E8A5A;--okbg:#E3F3EA;--warn:#B26A00;--warnbg:#FBEFD6;--bad:#C8322B;--badbg:#FAE3E1;--info:#2B5DA8;--infobg:#E3ECF8;--grey:#EEEBE7}
-*{box-sizing:border-box}html,body{max-width:100%;overflow-x:hidden}body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans JP","Hiragino Sans",sans-serif;font-size:14px;line-height:1.6}
+*{box-sizing:border-box}html,body{max-width:100%;overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans JP","Hiragino Sans",sans-serif;font-size:14px;line-height:1.6;-webkit-text-size-adjust:100%}
 button,select,input,textarea{font:inherit}
-.app{display:grid;grid-template-columns:210px 1fr;min-height:100vh}
+a{color:var(--info)}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
 .app>*{min-width:0}
-.side{background:var(--panel);border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;gap:14px;position:sticky;top:0;height:100vh}
-.brand{font-weight:700;font-size:15px}.brand small{display:block;font-weight:400;color:var(--mute);font-size:11px}
-.nav{display:flex;flex-direction:column;gap:2px}.nav button{text-align:left;background:none;border:0;color:var(--ink2);padding:8px 10px;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between}
-.nav button.on{background:var(--accbg);color:var(--acc);font-weight:700}.cnt{font-size:11px;background:var(--grey);border-radius:10px;padding:0 7px}
-.side .foot{margin-top:auto;font-size:11px;color:var(--mute);word-break:break-all}.side .foot a{color:var(--info)}
-.main{padding:24px 28px 80px;min-width:0}
-h1{font-size:19px;margin:0 0 4px}.sub{color:var(--mute);margin:0 0 18px;font-size:13px}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:18px}
-.tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px}.tile .l{font-size:12px;color:var(--mute)}.tile .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}.tile .s{font-size:12px;color:var(--ink2)}
+.side{background:var(--panel);border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;gap:16px;position:sticky;top:0;height:100vh}
+.brand{font-weight:700;font-size:16px;line-height:1.3}.brand small{display:block;font-weight:400;color:var(--mute);font-size:11px;margin-top:2px}
+.nav{display:flex;flex-direction:column;gap:3px}
+.nav button{text-align:left;background:none;border:0;color:var(--ink2);padding:10px 12px;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14.5px}
+.nav button.on{background:var(--accbg);color:var(--acc);font-weight:700}
+.cnt{font-size:11px;background:var(--grey);border-radius:10px;padding:1px 7px;font-variant-numeric:tabular-nums}
+.nav button.on .cnt{background:var(--acc);color:#fff}
+.side .foot{margin-top:auto;font-size:11.5px;color:var(--mute);display:flex;flex-direction:column;gap:4px}
+.main{padding:24px 28px 80px}
+h1{font-size:21px;margin:0 0 4px}.sub{color:var(--mute);margin:0 0 16px;font-size:13px}
+.subnav{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 18px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.subnav button{border:1px solid var(--line);background:var(--panel);color:var(--ink2);border-radius:18px;padding:7px 14px;font-size:13.5px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.subnav button.on{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700}
+.subnav .cnt{background:rgba(0,0,0,.07)}.subnav button.on .cnt{background:rgba(255,255,255,.25);color:#fff}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin-bottom:18px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px}
+.tile .l{font-size:12px;color:var(--mute)}.tile .v{font-size:23px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.25}.tile .s{font-size:12px;color:var(--ink2)}
 .tile.bad .v{color:var(--bad)}.tile.warn .v{color:var(--warn)}.tile.ok .v{color:var(--ok)}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:14px}.card h2{font-size:14px;margin:0 0 8px}
-.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:middle}
-th{font-size:11.5px;color:var(--mute);font-weight:500}td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.card h2{font-size:14.5px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.card h2 small{font-weight:400;color:var(--mute);font-size:12px}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:middle}
+th{font-size:11.5px;color:var(--mute);font-weight:500}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
 tr.row{cursor:pointer}tr.row:hover td{background:var(--grey)}
-.pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11.5px;font-weight:700}
+.pill{display:inline-block;padding:1px 9px;border-radius:10px;font-size:11.5px;font-weight:700;white-space:nowrap}
 .p-ok{background:var(--okbg);color:var(--ok)}.p-warn{background:var(--warnbg);color:var(--warn)}.p-bad{background:var(--badbg);color:var(--bad)}.p-info{background:var(--infobg);color:var(--info)}.p-grey{background:var(--grey);color:var(--ink2)}
-.ent{font-size:11px;font-weight:700;padding:1px 6px;border-radius:4px;color:#fff;background:#FF4D0A}.ent.E01{background:linear-gradient(135deg,#E8456B,#F06A2D)}
-.btn{border:1px solid var(--line2);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:6px;font-size:13px;cursor:pointer}.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}.btn.sm{padding:3px 9px;font-size:12px}.btn:disabled{opacity:.45;cursor:default}
-.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}.sp{flex:1}
-.filters button{border:1px solid var(--line);background:var(--panel);color:var(--ink2);border-radius:14px;padding:3px 11px;font-size:12px;cursor:pointer;margin-right:4px}.filters button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.sel{padding:6px 8px;border:1px solid var(--line2);border-radius:6px;background:var(--panel);color:var(--ink);width:100%}
-.fl{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mute);margin-bottom:10px}
-.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:1000px){.split{grid-template-columns:1fr}}
-.note{font-size:12px;color:var(--ink2);background:var(--grey);border-radius:6px;padding:8px 12px;margin-bottom:12px}
-.empty{color:var(--mute);padding:16px 0;text-align:center}
-.paperwrap{background:var(--grey);padding:14px;border-radius:8px;overflow:auto}
-iframe.paper{width:210mm;height:297mm;border:0;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);display:block;margin:0 auto;transform-origin:top left}
-textarea.mail{width:100%;min-height:260px;border:1px solid var(--line2);border-radius:6px;padding:10px;line-height:1.7;resize:vertical}
-.voice{background:linear-gradient(180deg,#fff,#FDF7F5);border:1px solid var(--line);padding:18px}
+.ent{font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;color:#fff;background:#FF4D0A;white-space:nowrap}
+.ent.E01{background:linear-gradient(135deg,#E8456B,#F06A2D)}
+.btn{border:1px solid var(--line2);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:8px;font-size:13.5px;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+.btn.big{padding:12px 20px;font-size:15px}
+.btn.sm{padding:5px 11px;font-size:12.5px}
+.btn:disabled{opacity:.45;cursor:default}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}.sp{flex:1}
+.filters button{border:1px solid var(--line);background:var(--panel);color:var(--ink2);border-radius:14px;padding:5px 12px;font-size:12.5px;cursor:pointer;margin-right:4px}
+.filters button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.sel{padding:8px 10px;border:1px solid var(--line2);border-radius:8px;background:var(--panel);color:var(--ink);width:100%}
+.fl{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--mute);margin-bottom:12px}
+.fl>b{font-size:12px;color:var(--mute);font-weight:400}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:1000px){.split{grid-template-columns:1fr}}
+.note{font-size:12.5px;color:var(--ink2);background:var(--grey);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+.empty{color:var(--mute);padding:20px 0;text-align:center}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1.5px solid var(--line2);background:var(--panel);color:var(--ink2);border-radius:8px;padding:9px 13px;font-size:13.5px;cursor:pointer;text-align:left;line-height:1.35}
+.seg button b{display:block;font-size:14px;color:var(--ink)}
+.seg button small{display:block;font-size:11.5px;color:var(--mute)}
+.seg button.on{border-color:var(--acc);background:var(--accbg);color:var(--acc)}
+.seg button.on b,.seg button.on small{color:var(--acc)}
+.voice{background:linear-gradient(180deg,#fff,#FDF7F5);padding:18px}
 .vhead{font-size:12px;color:var(--mute);letter-spacing:.06em;text-align:center}
 .micwrap{text-align:center;padding:10px 0 4px}
 .mic{width:96px;height:96px;border-radius:50%;border:0;background:var(--acc);color:#fff;font-size:40px;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(240,90,62,.35);transition:.15s;-webkit-tap-highlight-color:transparent}
@@ -52,93 +77,101 @@ textarea.mail{width:100%;min-height:260px;border:1px solid var(--line2);border-r
 .say span{font-size:15px;font-weight:700}
 .sayall{background:var(--accbg);color:var(--acc);border-radius:8px;padding:10px 12px;font-size:14px;font-weight:700;line-height:1.6}
 textarea.vt{width:100%;min-height:92px;border:1px solid var(--line2);border-radius:10px;padding:12px;margin-top:12px;line-height:1.7;font-size:16px}
-.btn.big{padding:12px 20px;font-size:15px;border-radius:8px}
 .exwrap{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 .exlabel{font-size:12px;color:var(--mute);margin-bottom:6px}
 .ex1{display:block;background:var(--grey);border-radius:8px;padding:9px 12px;margin-bottom:6px;font-size:14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .ex1:active{background:var(--accbg);color:var(--acc)}
-.mchip{display:inline-block;background:var(--grey);border-radius:10px;padding:2px 10px;margin:3px 5px 3px 0;font-size:13px;color:var(--ink2);text-decoration:none}
+.mchip{display:inline-block;background:var(--grey);border-radius:10px;padding:3px 10px;margin:3px 5px 3px 0;font-size:13px;color:var(--ink2);text-decoration:none}
 .mchip b{color:var(--ink)}
-#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;opacity:0;transition:.2s;pointer-events:none;max-width:80vw}
+.paperwrap{background:var(--grey);padding:14px;border-radius:10px;overflow:auto}
+iframe.paper{width:210mm;height:297mm;border:0;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);display:block;margin:0 auto;transform-origin:top left}
+textarea.mail{width:100%;min-height:260px;border:1px solid var(--line2);border-radius:8px;padding:12px;line-height:1.7;resize:vertical;font-size:14px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:10px;font-size:13.5px;opacity:0;transition:.2s;pointer-events:none;max-width:88vw;z-index:50;text-align:center}
 #toast.on{opacity:1}
 @media(max-width:820px){
   body{font-size:15px}
   .app{grid-template-columns:1fr}
   .app>*{min-width:0;max-width:100%}
   .side{position:sticky;top:0;z-index:20;height:auto;flex-direction:column;align-items:stretch;gap:8px;padding:10px 12px 0;border-right:0;border-bottom:1px solid var(--line)}
-  .brand{font-size:16px}
-  .nav{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;gap:4px;padding-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .nav{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;gap:5px;padding-bottom:9px;scrollbar-width:none}
   .nav::-webkit-scrollbar{display:none}
-  .nav button{white-space:nowrap;padding:9px 13px;font-size:14px;border-radius:18px;background:var(--grey);gap:5px}
+  .nav button{white-space:nowrap;padding:9px 15px;border-radius:18px;background:var(--grey);gap:5px}
   .nav button.on{background:var(--acc);color:#fff}
-  .cnt{background:rgba(0,0,0,.08)}
-  .nav button.on .cnt{background:rgba(255,255,255,.3);color:#fff}
+  .nav button.on .cnt{background:rgba(255,255,255,.3)}
   .main{padding:16px 12px 70px}
-  h1{font-size:21px}.sub{font-size:13.5px}
-  .card{padding:14px}
+  .card{padding:14px}.voice{padding:14px}
   .tiles{grid-template-columns:1fr 1fr;gap:8px}
-  .says{grid-template-columns:1fr 1fr}
-  .say span{font-size:14px}
-  .sayall{font-size:13.5px}
-  .voice{padding:14px}
   .tile .v{font-size:20px}
+  .says{grid-template-columns:1fr 1fr}
+  .say span{font-size:14px}.sayall{font-size:13.5px}
   .split{grid-template-columns:1fr}
-  .sel,.fl .sel{font-size:16px;padding:10px 12px;border-radius:8px}
-  .btn{padding:10px 14px;font-size:15px;border-radius:8px}
-  .btn.sm{padding:6px 12px;font-size:13px}
+  .sel{font-size:16px;padding:10px 12px}
+  .btn{padding:10px 15px;font-size:15px}.btn.sm{padding:6px 12px;font-size:13px}
+  .seg{display:grid;grid-template-columns:1fr 1fr}
   table{font-size:13.5px}th,td{padding:9px 8px}
   .side .foot{display:none}
   .paperwrap{padding:8px}
 }
 </style></head><body>
 <div class="app">
-  <aside class="side"><div class="brand">mela 請求ハブ<small>invoice@melagrp.com</small></div><nav class="nav" id="nav"></nav>
-    <div class="foot" id="foot"></div></aside>
+  <aside class="side">
+    <div class="brand">mela 経理<small>invoice@melagrp.com</small></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="foot" id="foot"></div>
+  </aside>
   <main class="main" id="main"><div class="empty">読み込み中…</div></main>
 </div>
 <div id="toast"></div>
 <script>
-const USER = '';
-const VIEWS = [['home','今月'],['new','請求を作る'],['ar','請求の一覧'],['invoice','請求書を見る'],['dun','催促'],['ap','支払う側'],['docs','書類'],['line','LINE受信'],['settings','設定']];
-const PILL = {'作成待ち':'p-grey','確認待ち':'p-warn','作成済':'p-info','送付済':'p-info','入金済':'p-ok','未入金':'p-warn','催促中':'p-bad','取消':'p-grey','支払予定':'p-info','支払済':'p-ok'};
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwXOKcewGxJTEUf2IfNTWgElPXqFvfZVHpkKEwWFNn3nUMzqwkuDBtO7sHXsmqeaQIK/exec';
+let CODE = 'q3sqawj3';
 const _qs = new URLSearchParams(location.search);
-const _q = _qs.get('view');
-const S = { view: ['home','new','ar','invoice','dun','ap','docs','line','settings'].includes(_q) ? _q : 'home', boot:null, ar:[], ap:[], line:[], expenses:[], tree:null, dash:null, sel:_qs.get('id')||null, filter:'all', busy:false, edit:false };
+
+const VIEWS = [['home','ホーム'],['bill','請求する'],['pay','支払う'],['docs','書類'],['settings','設定']];
+const SUBS = {
+  bill: [['new','話して作る'],['ar','請求の一覧'],['invoice','請求書を見る'],['dun','催促']],
+  pay:  [['ap','受け取った請求'],['expense','立替・経費'],['line','LINEに届いたもの']],
+};
+const LEGACY = {ar:['bill','ar'],invoice:['bill','invoice'],dun:['bill','dun'],new:['bill','new'],ap:['pay','ap'],line:['pay','line'],expense:['pay','expense']};
+const PILL = {'作成待ち':'p-grey','確認待ち':'p-warn','作成済':'p-info','送付済':'p-info','入金済':'p-ok','未入金':'p-warn','催促中':'p-bad','取消':'p-grey','支払予定':'p-info','支払済':'p-ok','未請求':'p-warn','請求済':'p-ok'};
+
+const S = { view:'home', sub:{}, boot:null, ar:[], ap:[], line:[], expenses:[], tree:null, dash:null, sel:_qs.get('id')||null, filter:'all', busy:false };
+(function initView(){
+  const v=_qs.get('view');
+  if(v){
+    if(LEGACY[v]){ S.view=LEGACY[v][0]; S.sub[S.view]=LEGACY[v][1]; }
+    else if(VIEWS.some(x=>x[0]===v)) S.view=v;
+    const sb=_qs.get('sub'); if(sb) S.sub[S.view]=sb;
+  }
+  if(_qs.get('id')){ S.view='bill'; S.sub.bill='invoice'; }
+})();
+const subOf = v => S.sub[v] || (SUBS[v] ? SUBS[v][0][0] : null);
+
 const yen = n => n==null||n===''||isNaN(n) ? '—' : '¥'+Math.round(Number(n)).toLocaleString('ja-JP');
 const pill = s => `<span class="pill ${PILL[s]||'p-grey'}">${s||'—'}</span>`;
 const entTag = e => `<span class="ent ${e}">${e==='E01'?'mela':e==='E02'?'mela gym':e}</span>`;
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let CODE = 'q3sqawj3';
-function askCode(msg){
-  document.getElementById('main').innerHTML = `<div class="card" style="max-width:420px;margin:40px auto"><h2>mela 請求ハブ</h2><p class="sub">${msg || '合言葉を入力してください。台帳の「設定」シートにあります。'}</p>
-    <form id="codeform" onsubmit="return false"><input id="codein" class="sel" type="password" autocomplete="current-password" placeholder="合言葉" autofocus><div class="tools" style="margin-top:10px"><button class="btn pri" id="codego">開く</button></div></form></div>`;
-  document.getElementById('codego').onclick = () => { CODE = document.getElementById('codein').value.trim(); if(!CODE) return; try { localStorage.setItem('melahub-code', CODE); } catch(e) {} load(); };
-  document.getElementById('codeform').onsubmit = () => { document.getElementById('codego').click(); return false; };
-  return false;
-}
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwXOKcewGxJTEUf2IfNTWgElPXqFvfZVHpkKEwWFNn3nUMzqwkuDBtO7sHXsmqeaQIK/exec';
-async function call(fn, ...args) {
-  const r = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ api: fn, code: CODE, args }), redirect: 'follow' });
+async function call(fn, ...args){
+  const r = await fetch(GAS_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({api:fn, code:CODE, args}), redirect:'follow'});
   const j = await r.json();
-  if (!j.ok) throw new Error(j.error || 'error');
+  if(!j.ok) throw new Error(j.error||'error');
   return j.result;
 }
-function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),3500); }
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),4000); }
 function daysLate(r){ if(!r['支払期日']) return 0; return Math.floor((new Date(S.boot.today)-new Date(r['支払期日']))/86400000); }
 const isUnpaid = r => ['送付済','未入金','催促中'].includes(r['状態']);
 
 function applyAll(d){
-  S.boot = { today:d.today, entities:d.entities, accounts:d.accounts, clients:d.clients, staff:d.staff, statuses:d.statuses, ledgerUrl:d.ledgerUrl, hubUrl:d.hubUrl, secrets:d.secrets||{} };
+  S.boot = {today:d.today, entities:d.entities||[], accounts:d.accounts||[], clients:d.clients||[], staff:d.staff||[], statuses:d.statuses||[], ledgerUrl:d.ledgerUrl, hubUrl:d.hubUrl, secrets:d.secrets||{}};
   S.ar=d.ar||[]; S.ap=d.ap||[]; S.line=d.line||[]; S.expenses=d.expenses||[]; S.dash=d.dash||null;
-  document.getElementById('foot').innerHTML = `<a href="${S.boot.ledgerUrl}" target="_blank">台帳を開く</a> ／ <a href="${S.boot.hubUrl}" target="_blank">Driveを開く</a>`;
+  document.getElementById('foot').innerHTML = `<a href="${S.boot.hubUrl}" target="_blank">Driveを開く</a><a href="${S.boot.ledgerUrl}" target="_blank">台帳を開く</a>`;
 }
 function cacheSave(d){ try{ localStorage.setItem('melahub-cache', JSON.stringify({t:Date.now(),d})); }catch(e){} }
 function cacheLoad(){ try{ const c=JSON.parse(localStorage.getItem('melahub-cache')||'null'); return c&&c.d?c:null; }catch(e){ return null; } }
 
 async function load(){
-  if(!CODE) { askCode(); return; }
   const c = cacheLoad();
-  if(c){ applyAll(c.d); render(); markStale(c.t); }
+  if(c){ applyAll(c.d); render(); }
   else document.getElementById('main').innerHTML = '<div class="empty">読み込み中…</div>';
   try{
     let d;
@@ -148,68 +181,80 @@ async function load(){
       d=Object.assign({},boot,{ar,ap,dash,line,expenses:[]}); }
     applyAll(d); cacheSave(d); render();
   }catch(e){
-    if(String(e.message||e).includes('BAD_CODE')){ CODE=''; try{localStorage.removeItem('melahub-code');}catch(_){} askCode('合言葉が違います。もう一度入力してください。'); return; }
     if(!c) document.getElementById('main').innerHTML = `<div class="note">読み込みに失敗しました: ${esc(e.message||e)}</div>`;
     else toast('最新の取得に失敗しました。表示は前回の内容です');
   }
 }
-function markStale(t){ const el=document.getElementById('foot'); if(el) el.insertAdjacentHTML('afterbegin', `<div style="color:var(--mute)">更新中…</div>`); }
 async function refresh(){ return load(); }
-function counts(){ return { ar:S.ar.length, dun:S.ar.filter(r=>isUnpaid(r)&&daysLate(r)>0).length, ap:S.ap.filter(r=>['確認待ち','支払予定'].includes(r['状態'])).length, line:S.line.filter(r=>r['状態']==='未処理').length }; }
-function renderNav(){ const c=counts(); document.getElementById('nav').innerHTML = VIEWS.map(([k,l])=>`<button class="${S.view===k?'on':''}" data-v="${k}">${l}${c[k]?`<span class="cnt">${c[k]}</span>`:''}</button>`).join('');
-  document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{stopMic();S.view=b.dataset.v;render();}); }
+
+function counts(){
+  const dun=S.ar.filter(r=>isUnpaid(r)&&daysLate(r)>0).length;
+  const todo=S.ar.filter(r=>['確認待ち','作成待ち','作成済'].includes(r['状態'])).length;
+  const payDue=S.ap.filter(r=>['確認待ち','支払予定'].includes(r['状態'])).length;
+  return {bill:todo+dun, pay:payDue, home:0, docs:0, settings:0,
+          new:0, ar:S.ar.length, invoice:0, dun:dun, ap:payDue,
+          expense:S.expenses.filter(r=>r['請求先']==='未割当').length,
+          line:S.line.filter(r=>r['状態']==='未処理').length};
+}
+function renderNav(){
+  const c=counts();
+  document.getElementById('nav').innerHTML = VIEWS.map(([k,l])=>`<button class="${S.view===k?'on':''}" data-v="${k}">${l}${c[k]?`<span class="cnt">${c[k]}</span>`:''}</button>`).join('');
+  document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{stopMic();S.view=b.dataset.v;render();});
+}
+function subnav(){
+  const list=SUBS[S.view]; if(!list) return '';
+  const c=counts(), cur=subOf(S.view);
+  return `<div class="subnav">${list.map(([k,l])=>`<button class="${cur===k?'on':''}" data-s="${k}">${l}${c[k]?`<span class="cnt">${c[k]}</span>`:''}</button>`).join('')}</div>`;
+}
 
 function vHome(){
   const d=S.dash; if(!d) return '';
-  const todo = [];
-  S.ar.forEach(r=>{ if(isUnpaid(r)&&daysLate(r)>0) todo.push([r,'p-bad',`期日から${daysLate(r)}日超過`,'dun']); else if(r['状態']==='確認待ち') todo.push([r,'p-warn',r['メモ']||'内容確認が必要','invoice']); else if(r['状態']==='作成済') todo.push([r,'p-info',r['下書きURL']?'Gmail下書きあり。送ったら「送付済」に':'PDF作成済み。送付後に「送付済」に','invoice']); });
-  S.ap.forEach(r=>{ if(['確認待ち','支払予定'].includes(r['状態'])&&r['支払期日']&&r['支払期日']<d.today) todo.push([r,'p-bad','支払期日を過ぎています','ap']); });
-  return `<h1>今月</h1><p class="sub">${d.today} 時点。台帳の実データです。</p>
+  const fyStart = {E01:'2026-08', E02:'2026-05'};
+  const since = S.ar.filter(r=>String(r['請求日']||'') >= (fyStart[r['法人']]||'2026-08'));
+  const recv = S.ap.filter(r=>String(r['受領日']||'') >= '2026-08');
+  const todo=[];
+  S.ar.forEach(r=>{ if(isUnpaid(r)&&daysLate(r)>0) todo.push([r,'p-bad',`期日から${daysLate(r)}日過ぎています`,'bill','dun']);
+    else if(r['状態']==='確認待ち') todo.push([r,'p-warn',r['メモ']||'内容の確認が必要です','bill','invoice']);
+    else if(r['状態']==='作成済') todo.push([r,'p-info',r['下書きURL']?'Gmailに下書きがあります。送ったら「送付済」に':'PDFができています。送ったら「送付済」に','bill','invoice']); });
+  S.ap.forEach(r=>{ if(['確認待ち','支払予定'].includes(r['状態'])&&r['支払期日']&&r['支払期日']<d.today) todo.push([r,'p-bad','支払期日を過ぎています','pay','ap']); });
+  return `<h1>ホーム</h1><p class="sub">${d.today} 時点。台帳の実データです。</p>
   <div class="tiles">
    <div class="tile bad"><div class="l">入金の期日超過</div><div class="v">${yen(d.overdue.sum)}</div><div class="s">${d.overdue.n}件</div></div>
    <div class="tile warn"><div class="l">入金待ち（期日内）</div><div class="v">${yen(d.unpaid.sum)}</div><div class="s">${d.unpaid.n}件</div></div>
    <div class="tile ok"><div class="l">今月の入金</div><div class="v">${yen(d.paidM.sum)}</div><div class="s">${d.paidM.n}件</div></div>
    <div class="tile"><div class="l">作成中の請求</div><div class="v">${yen(d.toMake.sum)}</div><div class="s">${d.toMake.n}件</div></div>
-   <div class="tile ${d.payOverdue.n?'bad':''}"><div class="l">こちらが払う予定</div><div class="v">${yen(d.payDue.sum)}</div><div class="s">${d.payDue.n}件${d.payOverdue.n?`　うち期日超過 ${d.payOverdue.n}件`:''}</div></div>
-   <div class="tile"><div class="l">今月受け取った請求書</div><div class="v">${d.receivedM}</div><div class="s">件（Driveに保存済み）</div></div>
+   <div class="tile ${d.payOverdue.n?'bad':''}"><div class="l">こちらが払う予定</div><div class="v">${yen(d.payDue.sum)}</div><div class="s">${d.payDue.n}件${d.payOverdue.n?`　期日超過 ${d.payOverdue.n}件`:''}</div></div>
+   <div class="tile"><div class="l">今期に記録した書類</div><div class="v">${since.length+recv.length}</div><div class="s">出した ${since.length}件／受けた ${recv.length}件</div></div>
   </div>
-  <div class="card"><h2>要対応</h2>${todo.length?`<div class="tw"><table>${todo.map(([r,c,t,v])=>`<tr class="row" data-id="${esc(r['請求ID']||r['受領ID'])}" data-v="${v}"><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}<div style="font-size:11.5px;color:var(--mute)">${esc(r['件名'])}</div></td><td class="r">${yen(r['税込']||r['税込金額'])}</td><td>${pill(r['状態'])}<div style="font-size:11.5px;color:var(--ink2)">${esc(t)}</div></td></tr>`).join('')}</table></div>`:'<div class="empty">対応が必要なものはありません</div>'}</div>
-  <div class="note">入金状況は、GMOあおぞらのAPI連携が終わるまでは手で「入金済」に変えます（第2段階で自動化）。</div>`;
+  <div class="card"><h2>いま人がやること<small>${todo.length}件</small></h2>
+   ${todo.length?`<div class="tw"><table>${todo.map(([r,c,t,v,sb])=>`<tr class="row" data-id="${esc(r['請求ID']||r['受領ID'])}" data-v="${v}" data-s="${sb}"><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}<div style="font-size:11.5px;color:var(--mute)">${esc(r['件名'])}</div></td><td class="r">${yen(r['税込']||r['税込金額'])}</td><td><span class="pill ${c}">${esc(r['状態'])}</span><div style="font-size:11.5px;color:var(--ink2)">${esc(t)}</div></td></tr>`).join('')}</table></div>`:'<div class="empty">ありません</div>'}</div>
+  <div class="card"><h2>今期のはじまりから</h2>
+   <div class="tw"><table><tr><th>会社</th><th>期</th><th>開始</th><th class="r">出した請求</th><th class="r">受けた請求</th></tr>
+   ${(S.boot.entities||[]).map(e=>{const id=e['法人ID'];const a=since.filter(r=>r['法人']===id).length;const b=recv.filter(r=>r['法人']===id).length;
+     return `<tr><td>${entTag(id)} ${esc(e['正式名'])}</td><td>${id==='E01'?'第5期':'第4期'}</td><td>${fyStart[id]||''}</td><td class="r">${a}件</td><td class="r">${b}件</td></tr>`;}).join('')}
+   </table></div></div>
+  <div class="note">入金と支払の確認は、銀行の連携が終わるまでは手で「入金済」「支払済」に変えます。</div>`;
 }
 
-const FILTERS=[['all','すべて'],['make','作成中'],['sent','送付済'],['unpaid','入金待ち・催促'],['paid','入金済']];
-function vAr(){
-  const a=S.ar.filter(r=>{const s=r['状態'];return S.filter==='all'||(S.filter==='make'&&['作成待ち','確認待ち','作成済'].includes(s))||(S.filter==='sent'&&s==='送付済')||(S.filter==='unpaid'&&isUnpaid(r)&&s!=='送付済')||(S.filter==='paid'&&s==='入金済');});
-  return `<h1>請求の一覧</h1><p class="sub">1請求書1行。行をクリックで請求書へ。過去にinvoyで発行した分は金額が空です（PDFはDriveに保存済み）。</p>
-  <div class="tools"><div class="filters">${FILTERS.map(([k,l])=>`<button class="${S.filter===k?'on':''}" data-f="${k}">${l}</button>`).join('')}</div><span class="sp"></span><span style="font-size:12px;color:var(--mute)">${a.length}件</span></div>
-  <div class="card" style="padding:0"><div class="tw"><table><tr><th>請求ID</th><th>法人</th><th>宛名</th><th>件名</th><th class="r">税込</th><th>請求日</th><th>期日</th><th>担当</th><th>送付</th><th>状態</th><th>PDF</th></tr>
-  ${a.map(r=>`<tr class="row" data-id="${esc(r['請求ID'])}" data-v="invoice"><td style="font-family:monospace;font-size:12px">${esc(r['請求ID'])}</td><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td><td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${esc(r['件名'])}</td><td class="r">${yen(r['税込'])}</td><td>${esc(r['請求日'])}</td><td style="${isUnpaid(r)&&daysLate(r)>0?'color:var(--bad);font-weight:700':''}">${esc(r['支払期日'])}</td><td>${esc(r['担当'])}</td><td>${esc(r['送付経路'])}</td>
-   <td><select class="sel stsel" data-sheet="売掛台帳" data-col="請求ID" data-id="${esc(r['請求ID'])}" style="width:auto;padding:2px 6px;font-size:12px">${S.boot.statuses.map(s=>`<option ${r['状態']===s?'selected':''}>${s}</option>`).join('')}</select></td>
-   <td>${r['PDF']?`<a href="${esc(String(r['PDF']).split('\n')[0])}" target="_blank">開く</a>`:''}</td></tr>`).join('')||'<tr><td colspan="11" class="empty">まだありません</td></tr>'}</table></div></div>`;
+function segEntity(name, cur){
+  return `<div class="seg" data-seg="${name}">${(S.boot.entities||[]).map(e=>`<button type="button" data-val="${e['法人ID']}" class="${cur===e['法人ID']?'on':''}"><b>${esc(e['正式名'])}</b><small>登録番号 ${esc(e['登録番号']||'')}</small></button>`).join('')}</div>`;
 }
-
-function vAp(){
-  const a=S.ap;
-  return `<h1>支払う側</h1><p class="sub">受け取った請求書と、こちらが出した支払通知書。振り込んだら「支払済」に。GMO連携後は自動で消えます。</p>
-  <div class="card" style="padding:0"><div class="tw"><table><tr><th>受領ID</th><th>法人</th><th>取引先</th><th>件名</th><th>受領日</th><th>支払期日</th><th class="r">税込</th><th>発生源</th><th>状態</th><th>PDF</th></tr>
-  ${a.map(r=>`<tr><td style="font-family:monospace;font-size:12px">${esc(r['受領ID'])}</td><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td><td style="max-width:260px;overflow:hidden;text-overflow:ellipsis">${esc(r['件名'])}</td><td>${esc(r['受領日'])}</td><td style="${['確認待ち','支払予定'].includes(r['状態'])&&r['支払期日']&&r['支払期日']<S.boot.today?'color:var(--bad);font-weight:700':''}">${esc(r['支払期日'])}</td><td class="r">${yen(r['税込金額'])}</td><td>${esc(r['発生源'])}</td>
-   <td><select class="sel stsel" data-sheet="買掛台帳" data-col="受領ID" data-id="${esc(r['受領ID'])}" style="width:auto;padding:2px 6px;font-size:12px">${['確認待ち','支払予定','支払済','対象外'].map(s=>`<option ${r['状態']===s?'selected':''}>${s}</option>`).join('')}</select></td>
-   <td>${r['PDF']?`<a href="${esc(String(r['PDF']).split('\n')[0])}" target="_blank">開く</a>`:'<span style="color:var(--mute)">リンク型</span>'}</td></tr>`).join('')||'<tr><td colspan="10" class="empty">まだありません</td></tr>'}</table></div></div>`;
+function segAccount(name, cur, entId){
+  const accs=(S.boot.accounts||[]).filter(a=>!entId||a['法人ID']===entId);
+  const sel = cur || (accs[0]||{})['口座ID'];
+  return `<div class="seg" data-seg="${name}">${accs.map(a=>`<button type="button" data-val="${a['口座ID']}" class="${sel===a['口座ID']?'on':''}"><b>${esc(a['名義'])}</b><small>${esc(a['銀行'])} ${esc(a['口座番号'])}${a['用途']?'・'+esc(a['用途']):''}</small></button>`).join('')}</div>`;
 }
-
-function vLine(){
-  return `<h1>LINE受信</h1><p class="sub">「mela 請求受付」に届いたもの。第3段階で、ここから請求や立替の行を自動で起こします。</p>
-  <div class="card" style="padding:0"><div class="tw"><table><tr><th>受信日時</th><th>送信者</th><th>種別</th><th>本文</th><th>ファイル</th><th>状態</th></tr>
-  ${S.line.map(r=>`<tr><td>${esc(r['受信日時'])}</td><td>${esc(r['表示名'])}</td><td>${esc(r['種別'])}</td><td style="white-space:normal;max-width:420px">${esc(r['本文'])}</td><td>${r['Driveリンク']?`<a href="${esc(r['Driveリンク'])}" target="_blank">${esc(r['ファイル'])}</a>`:''}</td><td>${pill(r['状態'])}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">まだありません。LINEで @725ysdjf を友だち追加して送ると、ここに入ります</td></tr>'}</table></div></div>`;
-}
-
+function segVal(name){ const el=document.querySelector(`.seg[data-seg="${name}"] button.on`); return el?el.dataset.val:''; }
 function itemRow(n){ return `<div class="split irow" style="gap:8px;margin-bottom:6px;grid-template-columns:2fr 1fr"><input name="item${n}" class="sel" placeholder="品目 ${n}"><input name="amt${n}" class="sel" type="number" min="0" step="1" placeholder="単価（税抜）"></div>`; }
+
 function vNew(){
-  const b=S.boot; const clients=[...new Set(S.ar.map(r=>r['取引先']).concat(b.clients.map(c=>c['正式社名'])))].filter(Boolean);
-  const nextMonthEnd = (()=>{const d=new Date(b.today);const e=new Date(d.getFullYear(),d.getMonth()+2,0);return e.toISOString().slice(0,10);})();
-  const thisMonthEnd = (()=>{const d=new Date(b.today);const e=new Date(d.getFullYear(),d.getMonth()+1,0);return e.toISOString().slice(0,10);})();
-  return `<h1>請求を作る</h1><p class="sub">話しかけるのが一番速いです。うまく取れなかったところは、あとの画面で直せます。</p>
-  <div class="card voice">
+  const b=S.boot;
+  const clients=[...new Set(S.ar.map(r=>r['取引先']).concat(b.clients.map(c=>c['正式社名'])))].filter(Boolean);
+  const d=new Date(b.today);
+  const thisEnd=new Date(d.getFullYear(),d.getMonth()+1,0).toISOString().slice(0,10);
+  const nextEnd=new Date(d.getFullYear(),d.getMonth()+2,0).toISOString().slice(0,10);
+  const e0=(b.entities[0]||{})['法人ID']||'E01';
+  return `<div class="card voice">
     <div class="vhead">押すと聞き取りが始まります</div>
     <div class="micwrap"><button class="mic" id="mic" aria-label="押して話す">🎤</button>
       <div class="michead" id="michead">押して話す</div>
@@ -229,63 +274,79 @@ function vNew(){
       <span class="ex1">レクトのドメイン更新1650円、立て替えました</span>
     </div>
   </div>
-  <h2 style="font-size:15px;margin:22px 0 8px">自分で入力する</h2>
-  <div class="card"><form id="newform" onsubmit="return false"><div class="split"><div>
-    <label class="fl">請求元の法人<select name="entityId" class="sel">${b.entities.map(e=>`<option value="${e['法人ID']}">${esc(e['正式名'])}</option>`).join('')}</select></label>
-    <label class="fl">宛名<input name="to" class="sel" list="clients" placeholder="社名を入れると候補が出ます" autocomplete="off" required></label><datalist id="clients">${clients.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
-    <label class="fl">件名<input name="subject" class="sel" placeholder="コーポレートブランディング業務" required></label>
-    <label class="fl">送付先メール<input name="mail" class="sel" placeholder="keiri@example.co.jp（LINEなら空欄）"></label>
-    <div class="split"><label class="fl">送付方法<select name="via" class="sel"><option>メール</option><option>LINE</option></select></label><label class="fl">担当<select name="staff" class="sel">${b.staff.map(s=>`<option>${s}</option>`).join('')}</select></label></div>
-   </div><div>
-    <div class="fl" style="display:block">品目（税抜）</div><div id="itemrows">${itemRow(1)}${itemRow(2)}</div><button type="button" class="btn sm" id="additem" style="margin-bottom:10px">＋ 品目を追加</button>
-    <div class="split"><label class="fl">請求日<input name="date" class="sel" type="date" value="${thisMonthEnd}"></label><label class="fl">支払期日<input name="due" class="sel" type="date" value="${nextMonthEnd}"></label></div>
-    <label class="fl">振込先口座<select name="accountId" class="sel">${b.accounts.map(a=>`<option value="${a['口座ID']}">${esc(a['名義'])}　${esc(a['支店'])}　${esc(a['口座番号'])}</option>`).join('')}</select></label>
-    <label class="fl" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" name="feeOurs" style="width:auto"> 振込手数料は弊社負担</label>
-   </div></div>
-   <div class="tools" style="margin-top:12px"><button class="btn pri" id="newsubmit">確認待ちに追加して請求書を見る</button><span style="font-size:12px;color:var(--mute)">税は10%外税で自動計算</span></div></form></div>`;
+  <div class="card"><h2>自分で入力する<small>細かく決めたいとき</small></h2>
+  <form id="newform" onsubmit="return false">
+    <div class="fl"><b>どの会社から出す請求か</b>${segEntity('entityId',e0)}</div>
+    <div class="split"><div>
+      <label class="fl">宛名<input name="to" class="sel" list="clients" placeholder="社名を入れると候補が出ます" autocomplete="off"></label><datalist id="clients">${clients.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+      <label class="fl">件名<input name="subject" class="sel" placeholder="コーポレートブランディング業務"></label>
+      <label class="fl">送付先メール<input name="mail" class="sel" placeholder="LINEで送るなら空欄"></label>
+      <div class="split"><label class="fl">送付方法<select name="via" class="sel"><option>メール</option><option>LINE</option></select></label>
+      <label class="fl">担当<select name="staff" class="sel">${b.staff.map(s=>`<option>${s}</option>`).join('')}</select></label></div>
+    </div><div>
+      <div class="fl" style="display:block"><b>品目（単価は税抜）</b></div>
+      <div id="itemrows">${itemRow(1)}${itemRow(2)}</div>
+      <button type="button" class="btn sm" id="additem" style="margin-bottom:12px">＋ 品目を追加</button>
+      <div class="split"><label class="fl">請求日<input name="date" class="sel" type="date" value="${thisEnd}"></label><label class="fl">支払期日<input name="due" class="sel" type="date" value="${nextEnd}"></label></div>
+      <div class="fl"><b>振込先の口座</b><div id="accseg">${segAccount('accountId','',e0)}</div></div>
+      <label class="fl" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" name="feeOurs" style="width:auto"> 振込手数料は弊社負担</label>
+    </div></div>
+    <div class="tools" style="margin-top:8px"><button class="btn pri" id="newsubmit">確認待ちに追加して請求書を見る</button><span style="font-size:12px;color:var(--mute)">税は10%外税で自動計算</span></div>
+  </form></div>`;
 }
 async function submitNew(){
   const f=document.getElementById('newform'); const g=n=>(f.elements[n]||{}).value||'';
-  const cnt=f.querySelectorAll('.irow').length; const items=[]; for(let n=1;n<=cnt;n++){ if(g('item'+n)) items.push({name:g('item'+n),qty:1,unit:g('amt'+n)===''?null:Number(g('amt'+n))}); }
+  const cnt=f.querySelectorAll('.irow').length; const items=[];
+  for(let n=1;n<=cnt;n++){ if(g('item'+n)) items.push({name:g('item'+n),qty:1,unit:g('amt'+n)===''?null:Number(g('amt'+n))}); }
   if(!g('to')||!g('subject')||!items.length){ toast('宛名・件名・品目を入れてください'); return; }
   busy(true);
-  try{ const id=await call('api_createInvoice',{entityId:g('entityId'),to:g('to'),subject:g('subject'),mail:g('mail'),via:g('via'),staff:g('staff'),items,date:g('date'),due:g('due'),accountId:g('accountId'),feeOurs:!!(f.elements.feeOurs&&f.elements.feeOurs.checked)});
-    toast('追加しました: '+id); S.sel=id; S.view='invoice'; await refresh(); }
+  try{ const id=await call('api_createInvoice',{entityId:segVal('entityId'),to:g('to'),subject:g('subject'),mail:g('mail'),via:g('via'),staff:g('staff'),items,date:g('date'),due:g('due'),accountId:segVal('accountId'),feeOurs:!!(f.elements.feeOurs&&f.elements.feeOurs.checked)});
+    toast('追加しました: '+id); S.sel=id; S.view='bill'; S.sub.bill='invoice'; await refresh(); }
   catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); }
 }
 
-function itemRowEdit(i,n){ return `<div class="split irow2" style="gap:8px;margin-bottom:6px;grid-template-columns:2fr 90px 1fr"><input name="ename${n}" class="sel" value="${esc(i.name||'')}" placeholder="品目"><input name="eqty${n}" class="sel" type="number" min="1" step="1" value="${i.qty||1}"><input name="eunit${n}" class="sel" type="number" step="1" value="${i.unit==null?'':i.unit}" placeholder="単価（税抜）"></div>`; }
+const FILTERS=[['all','すべて'],['make','作成中'],['sent','送付済'],['unpaid','入金待ち・催促'],['paid','入金済']];
+function vAr(){
+  const a=S.ar.filter(r=>{const s=r['状態'];return S.filter==='all'||(S.filter==='make'&&['作成待ち','確認待ち','作成済'].includes(s))||(S.filter==='sent'&&s==='送付済')||(S.filter==='unpaid'&&isUnpaid(r)&&s!=='送付済')||(S.filter==='paid'&&s==='入金済');});
+  return `<div class="tools"><div class="filters">${FILTERS.map(([k,l])=>`<button class="${S.filter===k?'on':''}" data-f="${k}">${l}</button>`).join('')}</div><span class="sp"></span><span style="font-size:12px;color:var(--mute)">${a.length}件</span></div>
+  <div class="card" style="padding:0"><div class="tw"><table><tr><th>請求ID</th><th>会社</th><th>宛名</th><th>件名</th><th class="r">税込</th><th>請求日</th><th>期日</th><th>担当</th><th>状態</th><th>PDF</th></tr>
+  ${a.map(r=>`<tr class="row" data-id="${esc(r['請求ID'])}" data-v="bill" data-s="invoice"><td style="font-family:monospace;font-size:12px">${esc(r['請求ID'])}</td><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td><td style="max-width:230px;overflow:hidden;text-overflow:ellipsis">${esc(r['件名'])}</td><td class="r">${yen(r['税込'])}</td><td>${esc(r['請求日'])}</td><td style="${isUnpaid(r)&&daysLate(r)>0?'color:var(--bad);font-weight:700':''}">${esc(r['支払期日'])}</td><td>${esc(r['担当'])}</td>
+   <td><select class="sel stsel" data-sheet="売掛台帳" data-col="請求ID" data-id="${esc(r['請求ID'])}" style="width:auto;padding:3px 7px;font-size:12px">${S.boot.statuses.map(s=>`<option ${r['状態']===s?'selected':''}>${s}</option>`).join('')}</select></td>
+   <td>${r['PDF']?`<a href="${esc(String(r['PDF']).split('\n')[0])}" target="_blank">開く</a>`:''}</td></tr>`).join('')||'<tr><td colspan="10" class="empty">まだありません</td></tr>'}</table></div></div>`;
+}
+
+function itemRowEdit(i,n){ return `<div class="split irow2" style="gap:8px;margin-bottom:6px;grid-template-columns:2fr 80px 1fr"><input name="ename${n}" class="sel" value="${esc(i.name||'')}" placeholder="品目"><input name="eqty${n}" class="sel" type="number" min="1" step="1" value="${i.qty||1}"><input name="eunit${n}" class="sel" type="number" step="1" value="${i.unit==null?'':i.unit}" placeholder="単価（税抜）"></div>`; }
 function vInvoice(){
   let inv = S.sel ? S.ar.find(r=>r['請求ID']===S.sel) : null;
   if(!inv && !S.sel) inv = S.ar.find(r=>['確認待ち','作成待ち'].includes(r['状態'])) || S.ar[0];
-  if(!inv) return `<h1>請求書を見る</h1><div class="empty">${S.sel?'読み込み中…':'請求がありません'}</div>`;
-  S.sel=inv['請求ID']; const s=inv['状態']; const b=S.boot;
+  if(!inv) return `<div class="empty">${S.sel?'読み込み中…':'請求がありません'}</div>`;
+  S.sel=inv['請求ID']; const st=inv['状態']; const b=S.boot;
   const canPdf=inv.items&&inv.items.length&&!inv.items.some(i=>i.unit==null);
-  const isDraft=['確認待ち','作成待ち'].includes(s);
-  const fromLine=String(inv['発生源']||'').startsWith('LINE');
-  const editing = S.edit || (isDraft && fromLine && S.edit!==false);
-  const items = (inv.items&&inv.items.length?inv.items:[{name:inv['件名'],qty:1,unit:inv['税抜']||null}]);
-  const form = !isDraft ? '' : `<div class="card" id="editcard"><h2>内容を確認・修正 <span style="font-weight:400;color:var(--mute);font-size:12px">${fromLine?'LINEから読み取った内容です':''}</span></h2>
-    <form id="editform" onsubmit="return false"><div class="split"><div>
-      <label class="fl">請求元<select name="entityId" class="sel">${b.entities.map(e=>`<option value="${e['法人ID']}" ${inv['法人']===e['法人ID']?'selected':''}>${esc(e['正式名'])}</option>`).join('')}</select></label>
-      <label class="fl">宛名<input name="to" class="sel" list="clients" value="${esc(inv['取引先']||'')}"></label><datalist id="clients">${[...new Set(S.boot.clients.map(c=>c['正式社名']))].filter(Boolean).map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
-      <label class="fl">件名<input name="subject" class="sel" value="${esc(inv['件名']||'')}"></label>
-      <label class="fl">送付先メール<input name="mail" class="sel" value="${esc(inv['送付先メール']||'')}" placeholder="LINEで送るなら空欄"></label>
-      <div class="split"><label class="fl">送付方法<select name="via" class="sel"><option ${inv['送付経路']==='メール'?'selected':''}>メール</option><option ${inv['送付経路']==='LINE'?'selected':''}>LINE</option></select></label>
-      <label class="fl">担当<select name="staff" class="sel">${b.staff.map(x=>`<option ${inv['担当']===x?'selected':''}>${x}</option>`).join('')}</select></label></div>
-    </div><div>
-      <div class="fl" style="display:block">品目（単価は税抜）</div><div id="eitems">${items.map((i,n)=>itemRowEdit(i,n+1)).join('')}</div>
-      <button type="button" class="btn sm" id="eadditem" style="margin-bottom:10px">＋ 品目を追加</button>
-      <div class="split"><label class="fl">請求日<input name="date" class="sel" type="date" value="${esc(inv['請求日']||'')}"></label><label class="fl">支払期日<input name="due" class="sel" type="date" value="${esc(inv['支払期日']||'')}"></label></div>
-      <label class="fl">振込先<select name="accountId" class="sel">${b.accounts.map(a=>`<option value="${a['口座ID']}" ${inv['口座ID']===a['口座ID']?'selected':''}>${esc(a['名義'])}　${esc(a['口座番号'])}</option>`).join('')}</select></label>
-    </div></div>
-    <div class="tools" style="margin-top:12px"><button class="btn pri" id="esave">この内容で保存</button><span style="font-size:12px;color:var(--mute)">保存すると下の請求書に反映されます</span></div></form></div>`;
-  return `<h1>請求書を見る</h1><p class="sub">内容を直してから「PDFを作って下書きへ」。送信ボタンは人が押します。</p>
-  <div class="tools"><select id="invsel" class="sel" style="width:auto;max-width:460px">${S.ar.map(r=>`<option value="${esc(r['請求ID'])}" ${r['請求ID']===inv['請求ID']?'selected':''}>${esc(r['請求ID'])}　${esc(r['取引先'])}　${yen(r['税込'])}　${esc(r['状態'])}</option>`).join('')}</select>${pill(s)}<span class="sp"></span>
-   ${canPdf?`<button class="btn pri" id="mkpdf">${s==='作成済'?'PDFと下書きを作り直す':'PDFを作って下書きへ'}</button>`:''}
+  const isDraft=['確認待ち','作成待ち'].includes(st);
+  const items=(inv.items&&inv.items.length?inv.items:[{name:inv['件名'],qty:1,unit:inv['税抜']||null}]);
+  const form = !isDraft ? '' : `<div class="card"><h2>内容を確認して直す<small>${String(inv['発生源']||'').startsWith('LINE')?'話した内容から読み取りました':''}</small></h2>
+    <form id="editform" onsubmit="return false">
+      <div class="fl"><b>どの会社から出す請求か</b>${segEntity('eentity',inv['法人'])}</div>
+      <div class="split"><div>
+        <label class="fl">宛名<input name="to" class="sel" list="clients2" value="${esc(inv['取引先']||'')}"></label><datalist id="clients2">${[...new Set(b.clients.map(c=>c['正式社名']))].filter(Boolean).map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+        <label class="fl">件名<input name="subject" class="sel" value="${esc(inv['件名']||'')}"></label>
+        <label class="fl">送付先メール<input name="mail" class="sel" value="${esc(inv['送付先メール']||'')}" placeholder="LINEで送るなら空欄"></label>
+        <div class="split"><label class="fl">送付方法<select name="via" class="sel"><option ${inv['送付経路']==='メール'?'selected':''}>メール</option><option ${inv['送付経路']==='LINE'?'selected':''}>LINE</option></select></label>
+        <label class="fl">担当<select name="staff" class="sel">${b.staff.map(x=>`<option ${inv['担当']===x?'selected':''}>${x}</option>`).join('')}</select></label></div>
+      </div><div>
+        <div class="fl" style="display:block"><b>品目（単価は税抜）</b></div>
+        <div id="eitems">${items.map((i,n)=>itemRowEdit(i,n+1)).join('')}</div>
+        <button type="button" class="btn sm" id="eadditem" style="margin-bottom:12px">＋ 品目を追加</button>
+        <div class="split"><label class="fl">請求日<input name="date" class="sel" type="date" value="${esc(inv['請求日']||'')}"></label><label class="fl">支払期日<input name="due" class="sel" type="date" value="${esc(inv['支払期日']||'')}"></label></div>
+        <div class="fl"><b>振込先の口座</b><div id="eaccseg">${segAccount('eaccount',inv['口座ID'],inv['法人'])}</div></div>
+      </div></div>
+      <div class="tools" style="margin-top:8px"><button class="btn pri" id="esave">この内容で保存</button><span style="font-size:12px;color:var(--mute)">保存すると下の請求書に反映されます</span></div>
+    </form></div>`;
+  return `<div class="tools"><select id="invsel" class="sel" style="width:auto;max-width:440px">${S.ar.map(r=>`<option value="${esc(r['請求ID'])}" ${r['請求ID']===inv['請求ID']?'selected':''}>${esc(r['請求ID'])}　${esc(r['取引先'])}　${yen(r['税込'])}　${esc(r['状態'])}</option>`).join('')}</select>${pill(st)}<span class="sp"></span>
+   ${canPdf?`<button class="btn pri" id="mkpdf">${st==='作成済'?'PDFと下書きを作り直す':'PDFを作って下書きへ'}</button>`:''}
    ${inv['PDF']?`<a class="btn" href="${esc(String(inv['PDF']).split('\n')[0])}" target="_blank">PDFを開く</a>`:''}
    ${inv['下書きURL']?`<a class="btn" href="${esc(inv['下書きURL'])}" target="_blank">Gmail下書きを開く</a>`:''}
-   ${s==='作成済'?`<button class="btn" id="marksent">送った → 送付済にする</button>`:''}
+   ${st==='作成済'?`<button class="btn" id="marksent">送った → 送付済にする</button>`:''}
    ${isUnpaid(inv)?`<button class="btn" id="markpaid">入金を確認した → 入金済</button>`:''}</div>
   ${String(inv['メモ']||'').startsWith('LINE')?`<div class="note">${esc(inv['メモ'])}</div>`:''}
   ${form}
@@ -301,40 +362,63 @@ window.addEventListener('resize',fitPaper);
 
 function vDun(){
   const a=S.ar.filter(r=>isUnpaid(r)&&daysLate(r)>0).sort((x,y)=>daysLate(y)-daysLate(x));
-  const inv=a.find(r=>r['請求ID']===S.sel)||a[0]; if(inv) S.sel=inv['請求ID'];
-  return `<h1>催促</h1><p class="sub">期日を過ぎて入金待ちのものだけ。ボタンでinvoice@のGmailに催促の下書きができます。</p>
-  ${!a.length?'<div class="empty">期日超過の入金待ちはありません</div>':`<div class="split"><div class="card" style="padding:0"><div class="tw"><table><tr><th>宛名</th><th class="r">金額</th><th>期日</th><th class="r">超過</th><th>状態</th></tr>
-   ${a.map(r=>`<tr class="row" data-id="${esc(r['請求ID'])}" data-v="dun"><td>${entTag(r['法人'])} ${esc(r['取引先'])}<div style="font-family:monospace;font-size:11px;color:var(--mute)">${esc(r['請求ID'])}</div></td><td class="r">${yen(r['税込'])}</td><td>${esc(r['支払期日'])}</td><td class="r" style="color:var(--bad);font-weight:700">${daysLate(r)}日</td><td>${pill(r['状態'])}</td></tr>`).join('')}</table></div></div>
+  if(!a.length) return '<div class="empty">期日を過ぎた入金待ちはありません</div>';
+  const inv=a.find(r=>r['請求ID']===S.sel)||a[0]; S.sel=inv['請求ID'];
+  return `<div class="split"><div class="card" style="padding:0"><div class="tw"><table><tr><th>宛名</th><th class="r">金額</th><th>期日</th><th class="r">超過</th><th>状態</th></tr>
+   ${a.map(r=>`<tr class="row" data-id="${esc(r['請求ID'])}" data-v="bill" data-s="dun"><td>${entTag(r['法人'])} ${esc(r['取引先'])}<div style="font-family:monospace;font-size:11px;color:var(--mute)">${esc(r['請求ID'])}</div></td><td class="r">${yen(r['税込'])}</td><td>${esc(r['支払期日'])}</td><td class="r" style="color:var(--bad);font-weight:700">${daysLate(r)}日</td><td>${pill(r['状態'])}</td></tr>`).join('')}</table></div></div>
    <div class="card"><h2>${esc(inv['取引先'])}　${yen(inv['税込'])}</h2><div style="font-size:12px;color:var(--mute)">To: ${esc(inv['送付先メール']||'（メール未登録。文面をコピーして送ってください）')}　Cc: invoice@melagrp.com</div>
     <div class="tools" style="margin:10px 0"><button class="btn pri" id="mkdun">${inv['状態']==='催促中'?'2回目の催促下書きを作る':'催促の下書きを作る'}</button><button class="btn" id="markpaid2">入金を確認した → 入金済</button></div>
-    <textarea class="mail" id="dunbody" placeholder="「催促の下書きを作る」を押すと文面がここに出ます"></textarea></div></div>`}`;
+    <textarea class="mail" id="dunbody" placeholder="「催促の下書きを作る」を押すと文面がここに出ます"></textarea></div></div>`;
+}
+
+function vAp(){
+  const a=S.ap;
+  return `<p class="sub">受け取った請求書と、こちらが出した支払通知書。振り込んだら「支払済」に変えてください。</p>
+  <div class="card" style="padding:0"><div class="tw"><table><tr><th>受領ID</th><th>会社</th><th>取引先</th><th>件名</th><th>受領日</th><th>支払期日</th><th class="r">税込</th><th>もとは</th><th>状態</th><th>PDF</th></tr>
+  ${a.map(r=>`<tr><td style="font-family:monospace;font-size:12px">${esc(r['受領ID'])}</td><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td><td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${esc(r['件名'])}</td><td>${esc(r['受領日'])}</td><td style="${['確認待ち','支払予定'].includes(r['状態'])&&r['支払期日']&&r['支払期日']<S.boot.today?'color:var(--bad);font-weight:700':''}">${esc(r['支払期日'])}</td><td class="r">${yen(r['税込金額'])}</td><td>${esc(r['発生源'])}</td>
+   <td><select class="sel stsel" data-sheet="買掛台帳" data-col="受領ID" data-id="${esc(r['受領ID'])}" style="width:auto;padding:3px 7px;font-size:12px">${['確認待ち','支払予定','支払済','対象外'].map(s=>`<option ${r['状態']===s?'selected':''}>${s}</option>`).join('')}</select></td>
+   <td>${r['PDF']?`<a href="${esc(String(r['PDF']).split('\n')[0])}" target="_blank">開く</a>`:'<span style="color:var(--mute)">リンク型</span>'}</td></tr>`).join('')||'<tr><td colspan="10" class="empty">まだありません</td></tr>'}</table></div></div>`;
+}
+function vExpense(){
+  const a=S.expenses;
+  return `<p class="sub">立て替えたお金と、カードの利用です。「請求先」が決まると、次にその取引先へ請求するときに拾えます。</p>
+  <div class="card" style="padding:0"><div class="tw"><table><tr><th>立替ID</th><th>発生日</th><th>支払先</th><th>品目</th><th class="r">税込</th><th>請求先</th><th>状態</th><th>証憑</th></tr>
+  ${a.map(r=>`<tr><td style="font-family:monospace;font-size:12px">${esc(r['立替ID'])}</td><td>${esc(r['発生日'])}</td><td>${esc(r['支払先'])}</td><td>${esc(r['品目'])}</td><td class="r">${yen(r['税込金額'])}</td>
+   <td>${r['請求先']==='未割当'?`<span class="pill p-warn">未割当</span>`:esc(r['請求先'])}</td><td>${pill(r['状態'])}</td>
+   <td>${r['証憑']?`<a href="${esc(r['証憑'])}" target="_blank">開く</a>`:''}</td></tr>`).join('')||'<tr><td colspan="8" class="empty">まだありません。カードの利用通知メールをinvoice@に送ると自動で入ります</td></tr>'}</table></div></div>`;
+}
+function vLine(){
+  return `<p class="sub">LINE「mela 請求受付」に届いたもの。話した内容はここから請求の下書きになります。</p>
+  <div class="card" style="padding:0"><div class="tw"><table><tr><th>受信日時</th><th>送信者</th><th>種別</th><th>本文</th><th>ファイル</th><th>状態</th></tr>
+  ${S.line.map(r=>`<tr><td>${esc(r['受信日時'])}</td><td>${esc(r['表示名'])}</td><td>${esc(r['種別'])}</td><td style="white-space:normal;max-width:420px">${esc(r['本文'])}</td><td>${r['Driveリンク']?`<a href="${esc(r['Driveリンク'])}" target="_blank">${esc(r['ファイル'])}</a>`:''}</td><td>${pill(r['状態'])}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">まだありません</td></tr>'}</table></div></div>`;
 }
 
 function vDocs(){
   const t=S.tree;
-  if(!t) return `<h1>書類</h1><p class="sub">invoice@のDriveに、法人 → 期 → 書類の種類 → 月 の順で入っています。税理士にはこのフォルダを共有すれば渡せます。</p><div class="empty">読み込み中…</div>`;
-  return `<h1>書類</h1><p class="sub">invoice@のDriveに、法人 → 期 → 書類の種類 → 月 の順で入っています。税理士にはこのフォルダごと共有すれば渡せます。</p>
-  <div class="tools"><a class="btn pri" href="${t.url}" target="_blank">Driveのフォルダを開く</a><button class="btn" id="treereload">数え直す</button></div>
-  ${t.entities.map(e=>`<div class="card"><h2><a href="${e.url}" target="_blank">${esc(e.name)}</a></h2>
-    ${e.fiscals.map(f=>`<div style="margin-bottom:12px"><div style="font-size:12px;color:var(--mute);margin-bottom:6px"><a href="${f.url}" target="_blank">${esc(f.name)}</a></div>
-      <div class="tw"><table><tr><th>書類の種類</th><th class="r">件数</th><th>月ごと</th></tr>
+  const head=`<h1>書類</h1><p class="sub">Driveに、会社 → 期 → 書類の種類 → 月 の順で入っています。税理士にはこのフォルダごと共有すれば渡せます。</p>`;
+  if(!t) return head+`<div class="tools"><a class="btn pri" href="${S.boot.hubUrl}" target="_blank">Driveを開く</a></div><div class="empty">数えています…</div>`;
+  return head+`<div class="tools"><a class="btn pri" href="${t.url}" target="_blank">Driveを開く</a><button class="btn" id="treereload">数え直す</button></div>
+  ${t.entities.map(e=>`<div class="card"><h2><a href="${e.url}" target="_blank">${esc(e.name.replace(/^\d+_/,''))}</a></h2>
+    ${e.fiscals.map(f=>`<div style="margin-bottom:14px"><div style="font-size:12px;color:var(--mute);margin-bottom:6px"><a href="${f.url}" target="_blank">${esc(f.name)}</a></div>
+      <div class="tw"><table><tr><th>書類の種類</th><th class="r">件数</th><th>月ごと（押すとDriveが開きます）</th></tr>
       ${f.kinds.map(k=>`<tr><td><a href="${k.url}" target="_blank">${esc(k.name.replace(/^\d+_/,''))}</a></td><td class="r">${k.total}</td>
-        <td>${k.months.filter(m=>m.n).map(m=>`<a class="mchip" href="${m.url}" target="_blank">${esc(m.name)} <b>${m.n}</b></a>`).join('')||'<span style="color:var(--mute)">まだありません</span>'}</td></tr>`).join('')}
+        <td style="white-space:normal">${k.months.filter(m=>m.n).map(m=>`<a class="mchip" href="${m.url}" target="_blank">${esc(m.name)} <b>${m.n}</b></a>`).join('')||'<span style="color:var(--mute)">まだありません</span>'}</td></tr>`).join('')}
       </table></div></div>`).join('')}</div>`).join('')}
-  <div class="note">ファイル名は「日付_取引先_内容.pdf」。日付・取引先・金額で探せるので、電子帳簿保存法の検索要件を満たします。</div>`;
+  <div class="note">ファイル名は「日付_取引先_内容.pdf」です。日付・取引先・金額で探せるので、電子帳簿保存法の検索要件を満たします。</div>`;
 }
+
 function vSettings(){
   const b=S.boot;
   return `<h1>設定</h1><p class="sub">マスタは台帳スプレッドシートで直接編集できます。ここは確認用です。</p>
   <div class="card"><h2>AI（声・文章の読み取り）</h2>
-   <div style="font-size:13px;color:var(--ink2);margin-bottom:8px">Claude APIキーを入れると、LINEに話した内容から請求の下書きを作れるようになります。キーはこの画面から送られ、GAS側にだけ保存されます。</div>
+   <div style="font-size:13px;color:var(--ink2);margin-bottom:10px">Claude APIキーを入れると、話した内容から請求の下書きを作れます。キーはこの画面から送られ、GAS側にだけ保存されます。</div>
    <div class="split"><label class="fl">Claude APIキー（sk-ant-…）<input id="aikey" class="sel" type="password" placeholder="${b.secrets&&b.secrets.anthropic?'設定済み（変えるときだけ入力）':'未設定'}"></label>
-   <label class="fl">Gemini APIキー（音声の文字起こし用・任意）<input id="gkey" class="sel" type="password" placeholder="${b.secrets&&b.secrets.gemini?'設定済み（変えるときだけ入力）':'未設定'}"></label></div>
+   <label class="fl">Gemini APIキー（音声メッセージの文字起こし用・任意）<input id="gkey" class="sel" type="password" placeholder="${b.secrets&&b.secrets.gemini?'設定済み（変えるときだけ入力）':'未設定'}"></label></div>
    <div class="tools"><button class="btn pri" id="savekeys">保存</button><span style="font-size:12px;color:var(--mute)">Claude: ${b.secrets&&b.secrets.anthropic?'設定済み':'未設定'} ／ Gemini: ${b.secrets&&b.secrets.gemini?'設定済み':'未設定'}</span></div></div>
-  ${b.entities.map(e=>`<div class="card"><h2>${entTag(e['法人ID'])}　${esc(e['正式名'])}　<span style="font-weight:400;color:var(--mute);font-size:12px">登録番号 ${esc(e['登録番号'])}　決算${esc(e['決算月'])}月</span></h2>
-   <div class="tw"><table><tr><th>口座</th><th>銀行</th><th>支店</th><th class="r">番号</th><th>名義</th><th>用途</th></tr>${b.accounts.filter(a=>a['法人ID']===e['法人ID']).map(a=>`<tr><td>${esc(a['口座ID'])}</td><td>${esc(a['銀行'])}</td><td>${esc(a['支店'])}</td><td class="r">${esc(a['口座番号'])}</td><td>${esc(a['名義'])}</td><td>${esc(a['用途'])}</td></tr>`).join('')}</table></div></div>`).join('')}
-  <div class="card"><h2>取引先マスタ（${b.clients.length}件）</h2><div class="tw"><table><tr><th>ID</th><th>正式社名</th><th>宛名</th><th>メール</th><th>送付</th><th>担当</th></tr>${b.clients.map(c=>`<tr><td>${esc(c['取引先ID'])}</td><td>${esc(c['正式社名'])}</td><td>${esc(c['宛名'])}</td><td>${esc(c['メール'])}</td><td>${esc(c['送付方法'])}</td><td>${esc(c['担当'])}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">請求を作ると自動で増えます</td></tr>'}</table></div></div>
-  <div class="card"><h2>LINE</h2><div>友だち追加ID: <b>@725ysdjf</b>（mela 請求受付）。担当者はこのIDで追加して、請求内容や領収書の写真を送るだけです。</div></div>`;
+  ${(b.entities||[]).map(e=>`<div class="card"><h2>${entTag(e['法人ID'])}　${esc(e['正式名'])}<small>登録番号 ${esc(e['登録番号'])}　決算${esc(e['決算月'])}月</small></h2>
+   <div class="tw"><table><tr><th>口座</th><th>銀行</th><th>支店</th><th class="r">番号</th><th>名義</th><th>用途</th></tr>${(b.accounts||[]).filter(a=>a['法人ID']===e['法人ID']).map(a=>`<tr><td>${esc(a['口座ID'])}</td><td>${esc(a['銀行'])}</td><td>${esc(a['支店'])}</td><td class="r">${esc(a['口座番号'])}</td><td>${esc(a['名義'])}</td><td>${esc(a['用途'])}</td></tr>`).join('')}</table></div></div>`).join('')}
+  <div class="card"><h2>取引先<small>${(b.clients||[]).length}件</small></h2><div class="tw"><table><tr><th>ID</th><th>正式社名</th><th>宛名</th><th>メール</th><th>送付</th><th>担当</th></tr>${(b.clients||[]).map(c=>`<tr><td>${esc(c['取引先ID'])}</td><td>${esc(c['正式社名'])}</td><td>${esc(c['宛名'])}</td><td>${esc(c['メール'])}</td><td>${esc(c['送付方法'])}</td><td>${esc(c['担当'])}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">請求を作ると自動で増えます</td></tr>'}</table></div></div>
+  <div class="card"><h2>LINE</h2><div style="font-size:13.5px">友だち追加ID <b>@725ysdjf</b>（mela 請求受付）。担当者はこのIDで追加して、話しかけるか写真を送るだけです。</div></div>`;
 }
 
 let REC=null, RECON=false;
@@ -353,62 +437,76 @@ function toggleMic(){
   REC = new SR(); REC.lang='ja-JP'; REC.continuous=true; REC.interimResults=true;
   let base = ta.value ? ta.value.trim()+' ' : '';
   REC.onstart=()=>{ RECON=true; micUI(true,'話し終えたら、もう一度押して止めてください'); };
-  REC.onresult=e=>{
-    let fin='', itm='';
+  REC.onresult=e=>{ let fin='',itm='';
     for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) fin+=r[0].transcript; else itm+=r[0].transcript; }
-    if(fin) base += fin;
-    ta.value = (base + itm).trim();
-  };
+    if(fin) base += fin; ta.value = (base+itm).trim(); };
   REC.onerror=ev=>{ RECON=false; micUI(false, ev.error==='not-allowed' ? 'マイクの使用が許可されていません。ブラウザの設定で許可してください' : '聞き取れませんでした。もう一度お試しください'); };
   REC.onend=()=>{ if(RECON){ try{REC.start();}catch(e){ RECON=false; micUI(false); } } else micUI(false,'「この内容で下書きを作る」を押してください'); };
   try{ REC.start(); }catch(e){ micUI(false,'マイクを起動できませんでした'); }
 }
+
 function busy(b){ S.busy=b; document.querySelectorAll('.btn.pri').forEach(x=>x.disabled=b); }
+const TITLES={bill:'請求する',pay:'支払う'};
+function bindSegs(){
+  document.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    g.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+    if(g.dataset.seg==='entityId'){ const box=document.getElementById('accseg'); if(box){ box.innerHTML=segAccount('accountId','',b.dataset.val); bindSegs(); } }
+    if(g.dataset.seg==='eentity'){ const box=document.getElementById('eaccseg'); if(box){ box.innerHTML=segAccount('eaccount','',b.dataset.val); bindSegs(); } }
+  }));
+}
 function render(){
   renderNav();
   const m=document.getElementById('main');
-  m.innerHTML = ({home:vHome,new:vNew,ar:vAr,invoice:vInvoice,dun:vDun,ap:vAp,docs:vDocs,line:vLine,settings:vSettings})[S.view]();
-  m.querySelectorAll('tr.row').forEach(tr=>tr.onclick=ev=>{ if(ev.target.closest('select,a,button')) return; S.sel=tr.dataset.id; S.view=tr.dataset.v||'invoice'; render(); });
+  let body='';
+  if(S.view==='home') body=vHome();
+  else if(S.view==='docs') body=vDocs();
+  else if(S.view==='settings') body=vSettings();
+  else {
+    const sb=subOf(S.view);
+    const inner = ({new:vNew,ar:vAr,invoice:vInvoice,dun:vDun,ap:vAp,expense:vExpense,line:vLine})[sb];
+    body=`<h1>${TITLES[S.view]||''}</h1>${subnav()}${inner?inner():''}`;
+  }
+  m.innerHTML=body;
+
+  m.querySelectorAll('.subnav button').forEach(b=>b.onclick=()=>{stopMic();S.sub[S.view]=b.dataset.s;render();});
+  m.querySelectorAll('tr.row').forEach(tr=>tr.onclick=ev=>{ if(ev.target.closest('select,a,button')) return; S.sel=tr.dataset.id; if(tr.dataset.v){S.view=tr.dataset.v; if(tr.dataset.s) S.sub[tr.dataset.v]=tr.dataset.s;} render(); });
   m.querySelectorAll('.stsel').forEach(s=>s.onchange=async()=>{ try{ await call('api_setStatus',s.dataset.sheet,s.dataset.col,s.dataset.id,s.value); toast('更新しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } });
   m.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{S.filter=b.dataset.f;render();});
+  bindSegs();
   const is=document.getElementById('invsel'); if(is) is.onchange=()=>{S.sel=is.value;render();};
-  const mic=document.getElementById('mic');
-  if(mic) mic.onclick=()=>toggleMic();
-  const vg=document.getElementById('vgo');
-  if(vg) vg.onclick=async()=>{
+  const ai=document.getElementById('additem'); if(ai) ai.onclick=()=>{const box=document.getElementById('itemrows');box.insertAdjacentHTML('beforeend',itemRow(box.querySelectorAll('.irow').length+1));};
+  const ns=document.getElementById('newsubmit'); if(ns) ns.onclick=submitNew;
+  const mic=document.getElementById('mic'); if(mic) mic.onclick=()=>toggleMic();
+  const vg=document.getElementById('vgo'); if(vg) vg.onclick=async()=>{
     const t=document.getElementById('vtext').value.trim();
     if(!t){ toast('内容を話すか入力してください'); return; }
     stopMic(); busy(true); toast('読み取っています…');
-    try{
-      const r=await call('api_voiceDraft',t,'画面');
-      if(r && r.id){ S.sel=r.id; S.view='invoice'; toast('下書きを作りました。内容を確認してください'); await refresh(); }
-      else { toast(r && r.reply ? r.reply.split('\n')[0] : '取引先か金額が読み取れませんでした'); }
+    try{ const r=await call('api_voiceDraft',t,'画面');
+      if(r&&r.id){ S.sel=r.id; S.view='bill'; S.sub.bill='invoice'; toast('下書きを作りました。内容を確認してください'); await refresh(); }
+      else toast(r&&r.reply?r.reply.split('\n')[0]:'取引先か金額が読み取れませんでした');
     }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
   const vc=document.getElementById('vclear'); if(vc) vc.onclick=()=>{ document.getElementById('vtext').value=''; };
-  document.querySelectorAll('.ex1').forEach(x=>x.onclick=()=>{ const ta=document.getElementById('vtext'); ta.value=x.textContent; ta.focus(); });
-  const ai=document.getElementById('additem'); if(ai) ai.onclick=()=>{const box=document.getElementById('itemrows');box.insertAdjacentHTML('beforeend',itemRow(box.querySelectorAll('.irow').length+1));};
-  const ns=document.getElementById('newsubmit'); if(ns) ns.onclick=submitNew;
+  m.querySelectorAll('.ex1').forEach(x=>x.onclick=()=>{ const ta=document.getElementById('vtext'); ta.value=x.textContent; ta.focus(); });
   const ea=document.getElementById('eadditem'); if(ea) ea.onclick=()=>{ const box=document.getElementById('eitems'); box.insertAdjacentHTML('beforeend', itemRowEdit({},box.querySelectorAll('.irow2').length+1)); };
   const es=document.getElementById('esave'); if(es) es.onclick=async()=>{
     const f=document.getElementById('editform'); const g=n=>(f.elements[n]||{}).value||'';
     const cnt=f.querySelectorAll('.irow2').length; const items=[];
     for(let n=1;n<=cnt;n++){ if(g('ename'+n)) items.push({name:g('ename'+n),qty:Number(g('eqty'+n)||1),unit:g('eunit'+n)===''?null:Number(g('eunit'+n))}); }
     busy(true);
-    try{ await call('api_updateInvoice',S.sel,{entityId:g('entityId'),to:g('to'),subject:g('subject'),mail:g('mail'),via:g('via'),staff:g('staff'),date:g('date'),due:g('due'),accountId:g('accountId'),items});
+    try{ await call('api_updateInvoice',S.sel,{entityId:segVal('eentity'),to:g('to'),subject:g('subject'),mail:g('mail'),via:g('via'),staff:g('staff'),date:g('date'),due:g('due'),accountId:segVal('eaccount'),items});
       toast('保存しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
   const sk=document.getElementById('savekeys'); if(sk) sk.onclick=async()=>{
     const a=document.getElementById('aikey').value.trim(), gg=document.getElementById('gkey').value.trim();
     busy(true);
     try{ if(a) await call('api_setSecret','ANTHROPIC_API_KEY',a); if(gg) await call('api_setSecret','GEMINI_API_KEY',gg);
-      toast('保存しました'); document.getElementById('aikey').value=''; document.getElementById('gkey').value=''; await refresh(); }
-    catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
+      toast('保存しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
   const mk=document.getElementById('mkpdf'); if(mk) mk.onclick=async()=>{ busy(true); toast('PDFを作っています…'); try{ const r=await call('api_makePdfAndDraft',S.sel); toast(r.draft?'PDFとGmail下書きを作りました':'PDFを作りました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false);} };
   const ms=document.getElementById('marksent'); if(ms) ms.onclick=async()=>{ await call('api_setStatus','売掛台帳','請求ID',S.sel,'送付済'); toast('送付済にしました'); await refresh(); };
   ['markpaid','markpaid2'].forEach(id=>{ const b=document.getElementById(id); if(b) b.onclick=async()=>{ await call('api_setStatus','売掛台帳','請求ID',S.sel,'入金済'); toast('入金済にしました'); await refresh(); }; });
-  const md=document.getElementById('mkdun'); if(md) md.onclick=async()=>{ busy(true); try{ const r=await call('api_dunningDraft',S.sel); document.getElementById('dunbody').value=r.text; toast(r.draft?'Gmailに催促の下書きを作りました':'メール未登録のため文面だけ作りました'); if(r.draft) window.open(r.draft,'_blank'); await refresh(); document.getElementById('dunbody').value=r.text; }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false);} };
+  const md=document.getElementById('mkdun'); if(md) md.onclick=async()=>{ busy(true); try{ const r=await call('api_dunningDraft',S.sel); document.getElementById('dunbody').value=r.text; toast(r.draft?'Gmailに催促の下書きを作りました':'メール未登録のため文面だけ作りました'); if(r.draft) window.open(r.draft,'_blank'); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false);} };
   const tr=document.getElementById('treereload'); if(tr) tr.onclick=async()=>{ S.tree=null; render(); try{ S.tree=await call('api_driveTree'); }catch(e){ toast('失敗: '+(e.message||e)); } render(); };
   if(S.view==='docs' && !S.tree) call('api_driveTree').then(t=>{ S.tree=t; if(S.view==='docs') render(); }).catch(()=>{});
-  if(S.view==='invoice') loadPaper();
+  if(S.view==='bill' && subOf('bill')==='invoice') loadPaper();
 }
 load();
 </script></body></html>
