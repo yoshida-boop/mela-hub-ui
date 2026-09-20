@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><title>mela 請求ハブ</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>mela 請求ハブ</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
 <style>
 :root{--bg:#F6F4F1;--panel:#fff;--line:#E4E0DB;--line2:#CFC9C2;--ink:#1F1B1A;--ink2:#5B5551;--mute:#8C857F;--acc:#F05A3E;--accbg:#FDEDE8;--ok:#1E8A5A;--okbg:#E3F3EA;--warn:#B26A00;--warnbg:#FBEFD6;--bad:#C8322B;--badbg:#FAE3E1;--info:#2B5DA8;--infobg:#E3ECF8;--grey:#EEEBE7}
@@ -34,24 +34,56 @@ tr.row{cursor:pointer}tr.row:hover td{background:var(--grey)}
 .paperwrap{background:var(--grey);padding:14px;border-radius:8px;overflow:auto}
 iframe.paper{width:210mm;height:297mm;border:0;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.12);display:block;margin:0 auto;transform-origin:top left}
 textarea.mail{width:100%;min-height:260px;border:1px solid var(--line2);border-radius:6px;padding:10px;line-height:1.7;resize:vertical}
-.voice{background:linear-gradient(180deg,#fff,#FDF7F5);border:1px solid var(--line)}
-.microw{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.mic{width:64px;height:64px;border-radius:50%;border:0;background:var(--acc);color:#fff;font-size:26px;cursor:pointer;flex:none;box-shadow:0 2px 8px rgba(240,90,62,.35);transition:.15s}
-.mic:hover{transform:scale(1.04)}
+.voice{background:linear-gradient(180deg,#fff,#FDF7F5);border:1px solid var(--line);padding:18px}
+.vhead{font-size:12px;color:var(--mute);letter-spacing:.06em;text-align:center}
+.micwrap{text-align:center;padding:10px 0 4px}
+.mic{width:96px;height:96px;border-radius:50%;border:0;background:var(--acc);color:#fff;font-size:40px;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(240,90,62,.35);transition:.15s;-webkit-tap-highlight-color:transparent}
+.mic:active{transform:scale(.96)}
 .mic.on{background:var(--bad);animation:pulse 1.2s infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(200,50,43,.5)}70%{box-shadow:0 0 0 14px rgba(200,50,43,0)}100%{box-shadow:0 0 0 0 rgba(200,50,43,0)}}
-.michint{font-size:13px;color:var(--ink2)}
-.michint b{display:block;font-size:15px;color:var(--ink)}
-textarea.vt{width:100%;min-height:84px;border:1px solid var(--line2);border-radius:8px;padding:10px 12px;margin-top:12px;line-height:1.7;resize:vertical;font-size:15px}
-.ex{font-size:12px;color:var(--mute);margin-top:6px}
-.mchip{display:inline-block;background:var(--grey);border-radius:10px;padding:1px 9px;margin:2px 4px 2px 0;font-size:12px;color:var(--ink2);text-decoration:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(200,50,43,.5)}70%{box-shadow:0 0 0 20px rgba(200,50,43,0)}100%{box-shadow:0 0 0 0 rgba(200,50,43,0)}}
+.michead{font-size:17px;font-weight:700;margin-top:10px}
+.micsub{font-size:13px;color:var(--ink2);margin-top:2px}
+.says{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:16px 0 10px}
+.say{display:flex;gap:9px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+.say i{flex:none;width:22px;height:22px;border-radius:50%;background:var(--acc);color:#fff;font-style:normal;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.say.opt i{background:var(--mute)}
+.say b{display:block;font-size:12px;color:var(--mute);font-weight:500}
+.say span{font-size:15px;font-weight:700}
+.sayall{background:var(--accbg);color:var(--acc);border-radius:8px;padding:10px 12px;font-size:14px;font-weight:700;line-height:1.6}
+textarea.vt{width:100%;min-height:92px;border:1px solid var(--line2);border-radius:10px;padding:12px;margin-top:12px;line-height:1.7;font-size:16px}
+.btn.big{padding:12px 20px;font-size:15px;border-radius:8px}
+.exwrap{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.exlabel{font-size:12px;color:var(--mute);margin-bottom:6px}
+.ex1{display:block;background:var(--grey);border-radius:8px;padding:9px 12px;margin-bottom:6px;font-size:14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ex1:active{background:var(--accbg);color:var(--acc)}
+.mchip{display:inline-block;background:var(--grey);border-radius:10px;padding:2px 10px;margin:3px 5px 3px 0;font-size:13px;color:var(--ink2);text-decoration:none}
 .mchip b{color:var(--ink)}
-.mchip:hover{background:var(--accbg);color:var(--acc)}
-.ex span{display:inline-block;background:var(--grey);border-radius:10px;padding:2px 9px;margin:3px 4px 0 0;cursor:pointer}
-.ex span:hover{background:var(--accbg);color:var(--acc)}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;opacity:0;transition:.2s;pointer-events:none;max-width:80vw}
 #toast.on{opacity:1}
-@media(max-width:820px){.app{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;gap:8px;padding:10px 12px;border-right:0;border-bottom:1px solid var(--line)}.nav{flex-direction:row;flex-wrap:wrap}.main{padding:16px 12px 60px}.side .foot{display:none}}
+@media(max-width:820px){
+  body{font-size:15px}
+  .app{grid-template-columns:1fr}
+  .side{position:sticky;top:0;z-index:20;height:auto;flex-direction:column;align-items:stretch;gap:8px;padding:10px 12px 0;border-right:0;border-bottom:1px solid var(--line)}
+  .brand{font-size:16px}
+  .nav{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;gap:4px;padding-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .nav::-webkit-scrollbar{display:none}
+  .nav button{white-space:nowrap;padding:9px 13px;font-size:14px;border-radius:18px;background:var(--grey);gap:5px}
+  .nav button.on{background:var(--acc);color:#fff}
+  .cnt{background:rgba(0,0,0,.08)}
+  .nav button.on .cnt{background:rgba(255,255,255,.3);color:#fff}
+  .main{padding:16px 12px 70px}
+  h1{font-size:21px}.sub{font-size:13.5px}
+  .card{padding:14px}
+  .tiles{grid-template-columns:1fr 1fr;gap:8px}
+  .tile .v{font-size:20px}
+  .split{grid-template-columns:1fr}
+  .sel,.fl .sel{font-size:16px;padding:10px 12px;border-radius:8px}
+  .btn{padding:10px 14px;font-size:15px;border-radius:8px}
+  .btn.sm{padding:6px 12px;font-size:13px}
+  table{font-size:13.5px}th,td{padding:9px 8px}
+  .side .foot{display:none}
+  .paperwrap{padding:8px}
+}
 </style></head><body>
 <div class="app">
   <aside class="side"><div class="brand">mela 請求ハブ<small>invoice@melagrp.com</small></div><nav class="nav" id="nav"></nav>
@@ -172,11 +204,24 @@ function vNew(){
   const thisMonthEnd = (()=>{const d=new Date(b.today);const e=new Date(d.getFullYear(),d.getMonth()+1,0);return e.toISOString().slice(0,10);})();
   return `<h1>請求を作る</h1><p class="sub">話しかけるのが一番速いです。うまく取れなかったところは、あとの画面で直せます。</p>
   <div class="card voice">
-    <div class="microw"><button class="mic" id="mic" title="押して話す">🎤</button>
-      <div class="michint"><b id="michead">押して話す</b><span id="micsub">「結びさんに9月分のコンサル25万で請求お願い」のように話してください</span></div></div>
-    <textarea class="vt" id="vtext" placeholder="話した内容がここに出ます。キーボードのマイクで入力したり、直接書いてもかまいません。"></textarea>
-    <div class="ex">例:<span>結びさんに9月分のコンサル25万で請求お願い</span><span>アクロシーズさん、いつものコンサル費で今月分</span><span>レクトのドメイン更新1650円、立て替えました</span></div>
-    <div class="tools" style="margin-top:12px"><button class="btn pri" id="vgo">この内容で下書きを作る</button><button class="btn" id="vclear">消す</button></div>
+    <div class="vhead">押すと聞き取りが始まります</div>
+    <div class="micwrap"><button class="mic" id="mic" aria-label="押して話す">🎤</button>
+      <div class="michead" id="michead">押して話す</div>
+      <div class="micsub" id="micsub">話し終わったら、もう一度押して止めてください</div></div>
+    <div class="says">
+      <div class="say"><i>1</i><div><b>どこに</b><span>結びさんに</span></div></div>
+      <div class="say"><i>2</i><div><b>何を</b><span>9月分のコンサルで</span></div></div>
+      <div class="say"><i>3</i><div><b>いくら</b><span>25万</span></div></div>
+      <div class="say opt"><i>4</i><div><b>期日（言わなくてOK）</b><span>10月末払いで</span></div></div>
+    </div>
+    <div class="sayall">つなげて言うだけ →「結びさんに9月分のコンサルで25万、請求お願い」</div>
+    <textarea class="vt" id="vtext" placeholder="話した内容がここに出ます。直接書いても、キーボードのマイクを使ってもかまいません。"></textarea>
+    <div class="tools" style="margin-top:12px"><button class="btn pri big" id="vgo">この内容で下書きを作る</button><button class="btn" id="vclear">消す</button></div>
+    <div class="exwrap"><div class="exlabel">こんな言い方もできます（押すと入ります）</div>
+      <span class="ex1">アクロシーズさん、いつものコンサル費で今月分</span>
+      <span class="ex1">シンクロニシティさんに9月のコンサル、税込で27万5千円</span>
+      <span class="ex1">レクトのドメイン更新1650円、立て替えました</span>
+    </div>
   </div>
   <h2 style="font-size:15px;margin:22px 0 8px">自分で入力する</h2>
   <div class="card"><form id="newform" onsubmit="return false"><div class="split"><div>
@@ -334,7 +379,7 @@ function render(){
       else { toast(r && r.reply ? r.reply.split('\n')[0] : '取引先か金額が読み取れませんでした'); }
     }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
   const vc=document.getElementById('vclear'); if(vc) vc.onclick=()=>{ document.getElementById('vtext').value=''; };
-  document.querySelectorAll('.ex span').forEach(x=>x.onclick=()=>{ document.getElementById('vtext').value=x.textContent; });
+  document.querySelectorAll('.ex1').forEach(x=>x.onclick=()=>{ const ta=document.getElementById('vtext'); ta.value=x.textContent; ta.focus(); });
   const ai=document.getElementById('additem'); if(ai) ai.onclick=()=>{const box=document.getElementById('itemrows');box.insertAdjacentHTML('beforeend',itemRow(box.querySelectorAll('.irow').length+1));};
   const ns=document.getElementById('newsubmit'); if(ns) ns.onclick=submitNew;
   const ea=document.getElementById('eadditem'); if(ea) ea.onclick=()=>{ const box=document.getElementById('eitems'); box.insertAdjacentHTML('beforeend', itemRowEdit({},box.querySelectorAll('.irow2').length+1)); };
