@@ -238,14 +238,14 @@ function vDun(){
 function vSettings(){
   const b=S.boot;
   return `<h1>設定</h1><p class="sub">マスタは台帳スプレッドシートで直接編集できます。ここは確認用です。</p>
-  ${b.entities.map(e=>`<div class="card"><h2>${entTag(e['法人ID'])}　${esc(e['正式名'])}　<span style="font-weight:400;color:var(--mute);font-size:12px">登録番号 ${esc(e['登録番号'])}　決算${esc(e['決算月'])}月</span></h2>
-   <div class="tw"><table><tr><th>口座</th><th>銀行</th><th>支店</th><th class="r">番号</th><th>名義</th><th>用途</th></tr>${b.accounts.filter(a=>a['法人ID']===e['法人ID']).map(a=>`<tr><td>${esc(a['口座ID'])}</td><td>${esc(a['銀行'])}</td><td>${esc(a['支店'])}</td><td class="r">${esc(a['口座番号'])}</td><td>${esc(a['名義'])}</td><td>${esc(a['用途'])}</td></tr>`).join('')}</table></div></div>`).join('')}
-  <div class="card"><h2>取引先マスタ（${b.clients.length}件）</h2><div class="tw"><table><tr><th>ID</th><th>正式社名</th><th>宛名</th><th>メール</th><th>送付</th><th>担当</th></tr>${b.clients.map(c=>`<tr><td>${esc(c['取引先ID'])}</td><td>${esc(c['正式社名'])}</td><td>${esc(c['宛名'])}</td><td>${esc(c['メール'])}</td><td>${esc(c['送付方法'])}</td><td>${esc(c['担当'])}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">請求を作ると自動で増えます</td></tr>'}</table></div></div>
   <div class="card"><h2>AI（声・文章の読み取り）</h2>
    <div style="font-size:13px;color:var(--ink2);margin-bottom:8px">Claude APIキーを入れると、LINEに話した内容から請求の下書きを作れるようになります。キーはこの画面から送られ、GAS側にだけ保存されます。</div>
    <div class="split"><label class="fl">Claude APIキー（sk-ant-…）<input id="aikey" class="sel" type="password" placeholder="${b.secrets&&b.secrets.anthropic?'設定済み（変えるときだけ入力）':'未設定'}"></label>
    <label class="fl">Gemini APIキー（音声の文字起こし用・任意）<input id="gkey" class="sel" type="password" placeholder="${b.secrets&&b.secrets.gemini?'設定済み（変えるときだけ入力）':'未設定'}"></label></div>
    <div class="tools"><button class="btn pri" id="savekeys">保存</button><span style="font-size:12px;color:var(--mute)">Claude: ${b.secrets&&b.secrets.anthropic?'設定済み':'未設定'} ／ Gemini: ${b.secrets&&b.secrets.gemini?'設定済み':'未設定'}</span></div></div>
+  ${b.entities.map(e=>`<div class="card"><h2>${entTag(e['法人ID'])}　${esc(e['正式名'])}　<span style="font-weight:400;color:var(--mute);font-size:12px">登録番号 ${esc(e['登録番号'])}　決算${esc(e['決算月'])}月</span></h2>
+   <div class="tw"><table><tr><th>口座</th><th>銀行</th><th>支店</th><th class="r">番号</th><th>名義</th><th>用途</th></tr>${b.accounts.filter(a=>a['法人ID']===e['法人ID']).map(a=>`<tr><td>${esc(a['口座ID'])}</td><td>${esc(a['銀行'])}</td><td>${esc(a['支店'])}</td><td class="r">${esc(a['口座番号'])}</td><td>${esc(a['名義'])}</td><td>${esc(a['用途'])}</td></tr>`).join('')}</table></div></div>`).join('')}
+  <div class="card"><h2>取引先マスタ（${b.clients.length}件）</h2><div class="tw"><table><tr><th>ID</th><th>正式社名</th><th>宛名</th><th>メール</th><th>送付</th><th>担当</th></tr>${b.clients.map(c=>`<tr><td>${esc(c['取引先ID'])}</td><td>${esc(c['正式社名'])}</td><td>${esc(c['宛名'])}</td><td>${esc(c['メール'])}</td><td>${esc(c['送付方法'])}</td><td>${esc(c['担当'])}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">請求を作ると自動で増えます</td></tr>'}</table></div></div>
   <div class="card"><h2>LINE</h2><div>友だち追加ID: <b>@725ysdjf</b>（mela 請求受付）。担当者はこのIDで追加して、請求内容や領収書の写真を送るだけです。</div></div>`;
 }
 
