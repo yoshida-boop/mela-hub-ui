@@ -482,6 +482,10 @@ function bindSegs(){
   }));
 }
 function render(){
+  try{ renderInner(); }
+  catch(err){ document.getElementById('main').innerHTML = `<div class="note">画面の表示でエラーが起きました。<br>${esc(err.message||err)}<br><br><button class="btn" onclick="localStorage.removeItem('melahub-cache');location.reload()">読み込み直す</button></div>`; }
+}
+function renderInner(){
   renderNav();
   const m=document.getElementById('main');
   let body='';
@@ -491,7 +495,7 @@ function render(){
   else {
     const sb=subOf(S.view);
     const inner = ({new:vNew,ar:vAr,invoice:vInvoice,dun:vDun,ap:vAp,expense:vExpense,line:vLine})[sb];
-    body=`<h1>${TITLES[S.view]||''}${SUBS[S.view]?`<span style="font-weight:400;color:var(--mute);font-size:14px">　${(SUBS[S.view].find(x=>x[0]===subOf(S.view))||[])[1]||''}</span>`:''}</h1>${subnav()}${inner?inner():''}`;
+    body=`<h1>${TITLES[S.view]||''}${SUBS[S.view]?`<span style="font-weight:400;color:var(--mute);font-size:14px">　${(SUBS[S.view].find(x=>x[0]===subOf(S.view))||[])[1]||''}</span>`:''}</h1>${inner?inner():''}`;
   }
   m.innerHTML=body;
 
