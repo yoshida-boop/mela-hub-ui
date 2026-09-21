@@ -422,6 +422,19 @@ function apRows(rows){
     <td>${r['PDF']?`<a href="${esc(String(r['PDF']).split('\n')[0])}" target="_blank">開く</a>`:'<span style="color:var(--mute)">—</span>'}</td></tr>`;
   }).join('');
 }
+// freee・マネーフォワードのリンク型はログインが要るので機械では取れない。ここで手入力できるようにする
+function apTableFill(rows){
+  return `<div class="tw"><table><tr><th>会社</th><th>取引先</th><th>件名</th><th>請求書</th><th>支払期日</th><th class="r">税込金額</th><th>状態</th></tr>
+  ${rows.map(r=>{
+    const link=String(r['PDF']||'').split('\n')[0];
+    return `<tr><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td>
+    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${esc(r['件名'])}</td>
+    <td>${link?`<a href="${esc(link)}" target="_blank">開く</a>`:'<span style="color:var(--mute)">添付なし</span>'}</td>
+    <td><input type="date" class="sel apfill" data-id="${esc(r['受領ID'])}" data-col="支払期日" style="width:150px;padding:4px 7px;font-size:12px"></td>
+    <td><input type="number" class="sel apfill" data-id="${esc(r['受領ID'])}" data-col="税込金額" placeholder="税込" style="width:110px;padding:4px 7px;font-size:12px;text-align:right"></td>
+    <td><select class="sel stsel" data-sheet="買掛台帳" data-col="受領ID" data-id="${esc(r['受領ID'])}" style="width:auto;padding:3px 7px;font-size:12px">${['確認待ち','支払予定','支払済','対象外'].map(s=>`<option ${r['状態']===s?'selected':''}>${s}</option>`).join('')}</select></td></tr>`;
+  }).join('')}</table></div>`;
+}
 function apTable(rows){
   return `<div class="tw"><table><tr><th>会社</th><th>取引先</th><th>件名</th><th>支払期日</th><th class="r">税込</th><th>状態</th><th>PDF</th></tr>${apRows(rows)}</table></div>`;
 }
@@ -451,7 +464,7 @@ function vAp(){
   let body=over.map(m=>block(m,true)).join('')+rest.map(m=>block(m,false)).join('');
   if(g['未定']) body+=`<div class="card" style="padding:0"><div class="mhead"><span>${monthLabel('未定')}</span><span>${g['未定'].length}件　<b>${yen(sumYen(g['未定']))}</b></span></div>
     <div style="padding:10px 14px"><div style="font-size:13px;color:var(--mute);margin-bottom:8px">まだPDFを読んでいないものです。「PDFを読む」を押すと、金額・支払期日・登録番号を読み取って上の月ごとの表に移します。1回で5件ずつ、30秒ほどかかります。</div>
-    <button class="btn pri" id="readap">PDFを読む</button></div>${apTable(g['未定'])}</div>`;
+    <button class="btn pri" id="readap">PDFを読む</button></div>${apTableFill(g['未定'])}</div>`;
   if(!body) body='<div class="card"><div class="empty">支払い待ちはありません</div></div>';
 
   return `<p class="sub">受け取った請求書と、こちらが出した支払通知書。支払う月ごとに分けています。振り込んだら「支払済」に変えてください。</p>
@@ -572,6 +585,13 @@ function renderInner(){
   const vc=document.getElementById('vclear'); if(vc) vc.onclick=()=>{ document.getElementById('vtext').value=''; };
   m.querySelectorAll('.ex1').forEach(x=>x.onclick=()=>{ const ta=document.getElementById('vtext'); ta.value=x.textContent; ta.focus(); });
   const eo=document.getElementById('editon'); if(eo) eo.onclick=()=>{ S.edit=S.sel; render(); };
+  m.querySelectorAll('.apfill').forEach(inp=>inp.onchange=async()=>{
+    const v=inp.value.trim(); if(!v) return;
+    const patch={}; patch[inp.dataset.col]= inp.dataset.col==='税込金額' ? Number(v) : v;
+    inp.disabled=true;
+    try{ await call('api_patchRow','買掛台帳','受領ID',inp.dataset.id,patch); toast('入れました'); await refresh(); }
+    catch(e){ toast('失敗: '+(e.message||e)); inp.disabled=false; }
+  });
   const rap=document.getElementById('readap'); if(rap) rap.onclick=async()=>{
     const lbl=rap.textContent; busy(true); rap.textContent='読んでいます…';
     try{ const r=await call('api_readPayables',5);
