@@ -39,6 +39,7 @@ h1{font-size:21px;margin:0 0 4px}.sub{color:var(--mute);margin:0 0 16px;font-siz
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
 .card h2{font-size:14.5px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .card h2 small{font-weight:400;color:var(--mute);font-size:12px}
+.hint{display:block;font-size:11.5px;color:var(--mute);font-weight:400;margin-top:3px}
 .mhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:11px 15px;border-bottom:1px solid var(--line);font-size:14px;font-weight:700;background:rgba(0,0,0,.02)}
 .mhead.warn{color:var(--bad);background:rgba(200,40,40,.05)}
 .mhead b{font-variant-numeric:tabular-nums}
@@ -154,7 +155,7 @@ const SUBS = {
 const LEGACY = {ar:['bill','ar'],invoice:['bill','invoice'],dun:['bill','dun'],new:['bill','new'],ap:['pay','ap'],line:['pay','line'],expense:['pay','expense']};
 const PILL = {'作成待ち':'p-grey','確認待ち':'p-warn','作成済':'p-info','送付済':'p-info','入金済':'p-ok','未入金':'p-warn','催促中':'p-bad','取消':'p-grey','支払予定':'p-info','支払済':'p-ok','未請求':'p-warn','請求済':'p-ok'};
 
-const S = { view:'home', sub:{}, boot:null, ar:[], ap:[], line:[], expenses:[], tree:null, dash:null, sel:_qs.get('id')||null, filter:'all', busy:false };
+const S = { view:'home', sub:{}, boot:null, ar:[], ap:[], line:[], expenses:[], tree:null, dash:null, sel:_qs.get('id')||null, filter:'all', busy:false, edit:null };
 (function initView(){
   const v=_qs.get('view');
   if(v){
@@ -357,17 +358,17 @@ function vInvoice(){
   if(!inv) return `<div class="empty">${S.sel?'読み込み中…':'請求がありません'}</div>`;
   S.sel=inv['請求ID']; const st=inv['状態']; const b=S.boot;
   const canPdf=inv.items&&inv.items.length&&!inv.items.some(i=>i.unit==null);
-  const isDraft=['確認待ち','作成待ち'].includes(st);
+  const isDraft=['確認待ち','作成待ち'].includes(st)||S.edit===inv['請求ID'];
   const items=(inv.items&&inv.items.length?inv.items:[{name:inv['件名'],qty:1,unit:inv['税抜']||null}]);
   const form = !isDraft ? '' : `<div class="card"><h2>内容を確認して直す<small>${String(inv['発生源']||'').startsWith('LINE')?'話した内容から読み取りました':''}</small></h2>
     <form id="editform" onsubmit="return false">
       <div class="fl"><b>どの会社から出す請求か</b>${segEntity('eentity',inv['法人'])}</div>
       <div class="split"><div>
-        <label class="fl">宛名<input name="to" class="sel" list="clients2" value="${esc(inv['取引先']||'')}"></label><datalist id="clients2">${[...new Set(b.clients.map(c=>c['正式社名']))].filter(Boolean).map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+        <label class="fl">宛名<input name="to" class="sel" list="clients2" value="${esc(inv['取引先']||'')}" autocomplete="off"><span class="hint">そのまま書き換えられます。登録済みの取引先は候補に出ます</span></label><datalist id="clients2">${[...new Set(b.clients.map(c=>c['正式社名']))].filter(Boolean).map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
         <label class="fl">件名<input name="subject" class="sel" value="${esc(inv['件名']||'')}"></label>
         <label class="fl">送付先メール<input name="mail" class="sel" value="${esc(inv['送付先メール']||'')}" placeholder="LINEで送るなら空欄"></label>
         <div class="split"><label class="fl">送付方法<select name="via" class="sel"><option ${inv['送付経路']==='メール'?'selected':''}>メール</option><option ${inv['送付経路']==='LINE'?'selected':''}>LINE</option></select></label>
-        <label class="fl">担当<select name="staff" class="sel">${b.staff.map(x=>`<option ${inv['担当']===x?'selected':''}>${x}</option>`).join('')}</select></label></div>
+        <label class="fl">担当<input name="staff" class="sel" list="staffs" value="${esc(inv['担当']||'')}" autocomplete="off"><span class="hint">名簿にない人も書けます</span></label><datalist id="staffs">${b.staff.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></div>
       </div><div>
         <div class="fl" style="display:block"><b>品目（単価は税抜）</b></div>
         <div id="eitems">${items.map((i,n)=>itemRowEdit(i,n+1)).join('')}</div>
@@ -382,7 +383,8 @@ function vInvoice(){
    ${inv['PDF']?`<a class="btn" href="${esc(String(inv['PDF']).split('\n')[0])}" target="_blank">PDFを開く</a>`:''}
    ${inv['下書きURL']?`<a class="btn" href="${esc(inv['下書きURL'])}" target="_blank">Gmail下書きを開く</a>`:''}
    ${st==='作成済'?`<button class="btn" id="marksent">送った → 送付済にする</button>`:''}
-   ${isUnpaid(inv)?`<button class="btn" id="markpaid">入金を確認した → 入金済</button>`:''}</div>
+   ${isUnpaid(inv)?`<button class="btn" id="markpaid">入金を確認した → 入金済</button>`:''}
+   ${isDraft?'':`<button class="btn" id="editon">内容を直す</button>`}</div>
   ${String(inv['メモ']||'').startsWith('LINE')?`<div class="note">${esc(inv['メモ'])}</div>`:''}
   ${form}
   ${!inv.items||!inv.items.length?`<div class="note">過去にinvoyで出した分の取り込みなので品目データがありません。PDFはDriveの保存分を開いてください。</div>`:''}
@@ -568,6 +570,7 @@ function renderInner(){
     }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); vg.textContent=lbl; } };
   const vc=document.getElementById('vclear'); if(vc) vc.onclick=()=>{ document.getElementById('vtext').value=''; };
   m.querySelectorAll('.ex1').forEach(x=>x.onclick=()=>{ const ta=document.getElementById('vtext'); ta.value=x.textContent; ta.focus(); });
+  const eo=document.getElementById('editon'); if(eo) eo.onclick=()=>{ S.edit=S.sel; render(); };
   const ea=document.getElementById('eadditem'); if(ea) ea.onclick=()=>{ const box=document.getElementById('eitems'); box.insertAdjacentHTML('beforeend', itemRowEdit({},box.querySelectorAll('.irow2').length+1)); };
   const es=document.getElementById('esave'); if(es) es.onclick=async()=>{
     const f=document.getElementById('editform'); const g=n=>(f.elements[n]||{}).value||'';
