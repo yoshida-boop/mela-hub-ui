@@ -450,7 +450,8 @@ function vAp(){
 
   let body=over.map(m=>block(m,true)).join('')+rest.map(m=>block(m,false)).join('');
   if(g['未定']) body+=`<div class="card" style="padding:0"><div class="mhead"><span>${monthLabel('未定')}</span><span>${g['未定'].length}件　<b>${yen(sumYen(g['未定']))}</b></span></div>
-    <div style="padding:10px 14px;font-size:13px;color:var(--mute)">請求書のPDFから期日が読み取れていません。開いて期日を確認し、状態を変えてください。</div>${apTable(g['未定'])}</div>`;
+    <div style="padding:10px 14px"><div style="font-size:13px;color:var(--mute);margin-bottom:8px">まだPDFを読んでいないものです。「PDFを読む」を押すと、金額・支払期日・登録番号を読み取って上の月ごとの表に移します。1回で5件ずつ、30秒ほどかかります。</div>
+    <button class="btn pri" id="readap">PDFを読む</button></div>${apTable(g['未定'])}</div>`;
   if(!body) body='<div class="card"><div class="empty">支払い待ちはありません</div></div>';
 
   return `<p class="sub">受け取った請求書と、こちらが出した支払通知書。支払う月ごとに分けています。振り込んだら「支払済」に変えてください。</p>
@@ -571,6 +572,12 @@ function renderInner(){
   const vc=document.getElementById('vclear'); if(vc) vc.onclick=()=>{ document.getElementById('vtext').value=''; };
   m.querySelectorAll('.ex1').forEach(x=>x.onclick=()=>{ const ta=document.getElementById('vtext'); ta.value=x.textContent; ta.focus(); });
   const eo=document.getElementById('editon'); if(eo) eo.onclick=()=>{ S.edit=S.sel; render(); };
+  const rap=document.getElementById('readap'); if(rap) rap.onclick=async()=>{
+    const lbl=rap.textContent; busy(true); rap.textContent='読んでいます…';
+    try{ const r=await call('api_readPayables',5);
+      const got=(r.results||[]).filter(x=>x.ok).length;
+      toast(`${got}件読めました。残り${r.left}件`); await refresh();
+    }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); rap.textContent=lbl; } };
   const ea=document.getElementById('eadditem'); if(ea) ea.onclick=()=>{ const box=document.getElementById('eitems'); box.insertAdjacentHTML('beforeend', itemRowEdit({},box.querySelectorAll('.irow2').length+1)); };
   const es=document.getElementById('esave'); if(es) es.onclick=async()=>{
     const f=document.getElementById('editform'); const g=n=>(f.elements[n]||{}).value||'';
