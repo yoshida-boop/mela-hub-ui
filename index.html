@@ -39,6 +39,12 @@ h1{font-size:21px;margin:0 0 4px}.sub{color:var(--mute);margin:0 0 16px;font-siz
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
 .card h2{font-size:14.5px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .card h2 small{font-weight:400;color:var(--mute);font-size:12px}
+.mhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:11px 15px;border-bottom:1px solid var(--line);font-size:14px;font-weight:700;background:rgba(0,0,0,.02)}
+.mhead.warn{color:var(--bad);background:rgba(200,40,40,.05)}
+.mhead b{font-variant-numeric:tabular-nums}
+details.card>summary{list-style:none}details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::after{content:'▾';margin-left:6px;color:var(--mute)}
+details.card[open]>summary::after{content:'▴'}
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{border-collapse:collapse;width:100%;font-size:13px}
 th,td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:middle}
@@ -400,13 +406,54 @@ function vDun(){
     <textarea class="mail" id="dunbody" placeholder="「催促の下書きを作る」を押すと文面がここに出ます"></textarea></div></div>`;
 }
 
+const sumYen = rows => rows.reduce((s,r)=>s+(Number(r['税込金額'])||0),0);
+const monthLabel = m => m==='未定' ? '支払期日が読めていないもの' : `${m.slice(0,4)}年${Number(m.slice(5,7))}月に払う`;
+
+function apRows(rows){
+  return rows.map(r=>{
+    const late = !['支払済','対象外'].includes(r['状態']) && ymd(r['支払期日']) && ymd(r['支払期日'])<S.boot.today;
+    return `<tr><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td>
+    <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis">${esc(r['件名'])}</td>
+    <td style="${late?'color:var(--bad);font-weight:700':''}">${ymd(r['支払期日'])||'—'}${late?' 超過':''}</td>
+    <td class="r">${yen(r['税込金額'])}</td>
+    <td><select class="sel stsel" data-sheet="買掛台帳" data-col="受領ID" data-id="${esc(r['受領ID'])}" style="width:auto;padding:3px 7px;font-size:12px">${['確認待ち','支払予定','支払済','対象外'].map(s=>`<option ${r['状態']===s?'selected':''}>${s}</option>`).join('')}</select></td>
+    <td>${r['PDF']?`<a href="${esc(String(r['PDF']).split('\n')[0])}" target="_blank">開く</a>`:'<span style="color:var(--mute)">—</span>'}</td></tr>`;
+  }).join('');
+}
+function apTable(rows){
+  return `<div class="tw"><table><tr><th>会社</th><th>取引先</th><th>件名</th><th>支払期日</th><th class="r">税込</th><th>状態</th><th>PDF</th></tr>${apRows(rows)}</table></div>`;
+}
+
 function vAp(){
-  const a=S.ap;
-  return `<p class="sub">受け取った請求書と、こちらが出した支払通知書。振り込んだら「支払済」に変えてください。</p>
-  <div class="card" style="padding:0"><div class="tw"><table><tr><th>受領ID</th><th>会社</th><th>取引先</th><th>件名</th><th>受領日</th><th>支払期日</th><th class="r">税込</th><th>もとは</th><th>状態</th><th>PDF</th></tr>
-  ${a.map(r=>`<tr><td style="font-family:monospace;font-size:12px">${esc(r['受領ID'])}</td><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td><td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${esc(r['件名'])}</td><td>${esc(r['受領日'])}</td><td style="${['確認待ち','支払予定'].includes(r['状態'])&&r['支払期日']&&r['支払期日']<S.boot.today?'color:var(--bad);font-weight:700':''}">${esc(r['支払期日'])}</td><td class="r">${yen(r['税込金額'])}</td><td>${esc(r['発生源'])}</td>
-   <td><select class="sel stsel" data-sheet="買掛台帳" data-col="受領ID" data-id="${esc(r['受領ID'])}" style="width:auto;padding:3px 7px;font-size:12px">${['確認待ち','支払予定','支払済','対象外'].map(s=>`<option ${r['状態']===s?'selected':''}>${s}</option>`).join('')}</select></td>
-   <td>${r['PDF']?`<a href="${esc(String(r['PDF']).split('\n')[0])}" target="_blank">開く</a>`:'<span style="color:var(--mute)">リンク型</span>'}</td></tr>`).join('')||'<tr><td colspan="10" class="empty">まだありません</td></tr>'}</table></div></div>`;
+  const today=S.boot.today, thisM=today.slice(0,7);
+  const live=S.ap.filter(r=>!['支払済','対象外'].includes(r['状態']));
+  const paid=S.ap.filter(r=>r['状態']==='支払済');
+  const g={};
+  live.forEach(r=>{ const m=ymd(r['支払期日']).slice(0,7)||'未定'; (g[m]=g[m]||[]).push(r); });
+  const months=Object.keys(g).filter(k=>k!=='未定').sort();
+  const over=months.filter(m=>m<thisM), rest=months.filter(m=>m>=thisM);
+
+  const thisSum=sumYen(g[thisM]||[]);
+  const overSum=over.reduce((s,m)=>s+sumYen(g[m]),0);
+  const laterSum=rest.filter(m=>m!==thisM).reduce((s,m)=>s+sumYen(g[m]),0);
+  const head=`<div class="tiles">
+    <div class="tile"><div class="l">今月（${Number(thisM.slice(5,7))}月）に払う</div><div class="v">${yen(thisSum)}</div><div class="s">${(g[thisM]||[]).length}件</div></div>
+    <div class="tile${overSum?' bad':''}"><div class="l">期限を過ぎている</div><div class="v">${yen(overSum)}</div><div class="s">${over.reduce((s,m)=>s+g[m].length,0)}件</div></div>
+    <div class="tile"><div class="l">来月以降</div><div class="v">${yen(laterSum)}</div><div class="s">${rest.filter(m=>m!==thisM).reduce((s,m)=>s+g[m].length,0)}件</div></div>
+  </div>`;
+
+  const block=(m,warn)=>`<div class="card" style="padding:0">
+    <div class="mhead${warn?' warn':''}"><span>${warn?'⚠ ':''}${monthLabel(m)}</span><span>${g[m].length}件　<b>${yen(sumYen(g[m]))}</b></span></div>
+    ${apTable(g[m].sort((a,b)=>String(a['取引先']).localeCompare(String(b['取引先']))))}</div>`;
+
+  let body=over.map(m=>block(m,true)).join('')+rest.map(m=>block(m,false)).join('');
+  if(g['未定']) body+=`<div class="card" style="padding:0"><div class="mhead"><span>${monthLabel('未定')}</span><span>${g['未定'].length}件　<b>${yen(sumYen(g['未定']))}</b></span></div>
+    <div style="padding:10px 14px;font-size:13px;color:var(--mute)">請求書のPDFから期日が読み取れていません。開いて期日を確認し、状態を変えてください。</div>${apTable(g['未定'])}</div>`;
+  if(!body) body='<div class="card"><div class="empty">支払い待ちはありません</div></div>';
+
+  return `<p class="sub">受け取った請求書と、こちらが出した支払通知書。支払う月ごとに分けています。振り込んだら「支払済」に変えてください。</p>
+  ${head}${body}
+  <details class="card" style="padding:0"><summary class="mhead" style="cursor:pointer"><span>支払い終わったもの</span><span>${paid.length}件　<b>${yen(sumYen(paid))}</b></span></summary>${apTable(paid.slice().sort((a,b)=>String(b['支払日']||'').localeCompare(String(a['支払日']||''))))}</details>`;
 }
 function vExpense(){
   const a=S.expenses;
