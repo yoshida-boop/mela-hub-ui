@@ -342,13 +342,52 @@ async function submitNew(){
 }
 
 const FILTERS=[['all','すべて'],['make','作成中'],['sent','送付済'],['unpaid','入金待ち・催促'],['paid','入金済']];
+function arTable(rows){
+  return `<div class="tw"><table><tr><th>会社</th><th>宛名</th><th>件名</th><th class="r">税込</th><th>期日</th><th>担当</th><th>状態</th><th>PDF</th></tr>
+  ${rows.map(r=>{
+    const late=isUnpaid(r)&&daysLate(r)>0;
+    return `<tr class="row" data-id="${esc(r['請求ID'])}" data-v="bill" data-s="invoice"><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td>
+    <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${esc(r['件名'])}</td><td class="r">${yen(r['税込'])}</td>
+    <td style="${late?'color:var(--bad);font-weight:700':''}">${ymd(r['支払期日'])||'—'}${late?` ${daysLate(r)}日超過`:''}</td><td>${esc(r['担当'])}</td>
+    <td><select class="sel stsel" data-sheet="売掛台帳" data-col="請求ID" data-id="${esc(r['請求ID'])}" style="width:auto;padding:3px 7px;font-size:12px">${S.boot.statuses.map(s=>`<option ${r['状態']===s?'selected':''}>${s}</option>`).join('')}</select></td>
+    <td>${r['PDF']?`<a href="${esc(String(r['PDF']).split('\n')[0])}" target="_blank">開く</a>`:''}</td></tr>`;
+  }).join('')||'<tr><td colspan="8" class="empty">ありません</td></tr>'}</table></div>`;
+}
+const sumAr = rows => rows.reduce((s,r)=>s+(Number(r['税込'])||0),0);
+
 function vAr(){
-  const a=S.ar.filter(r=>{const s=r['状態'];return S.filter==='all'||(S.filter==='make'&&['作成待ち','確認待ち','作成済'].includes(s))||(S.filter==='sent'&&s==='送付済')||(S.filter==='unpaid'&&isUnpaid(r)&&s!=='送付済')||(S.filter==='paid'&&s==='入金済');});
-  return `<div class="tools"><div class="filters">${FILTERS.map(([k,l])=>`<button class="${S.filter===k?'on':''}" data-f="${k}">${l}</button>`).join('')}</div><span class="sp"></span><span style="font-size:12px;color:var(--mute)">${a.length}件</span></div>
-  <div class="card" style="padding:0"><div class="tw"><table><tr><th>請求ID</th><th>会社</th><th>宛名</th><th>件名</th><th class="r">税込</th><th>請求日</th><th>期日</th><th>担当</th><th>状態</th><th>PDF</th></tr>
-  ${a.map(r=>`<tr class="row" data-id="${esc(r['請求ID'])}" data-v="bill" data-s="invoice"><td style="font-family:monospace;font-size:12px">${esc(r['請求ID'])}</td><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td><td style="max-width:230px;overflow:hidden;text-overflow:ellipsis">${esc(r['件名'])}</td><td class="r">${yen(r['税込'])}</td><td>${esc(r['請求日'])}</td><td style="${isUnpaid(r)&&daysLate(r)>0?'color:var(--bad);font-weight:700':''}">${esc(r['支払期日'])}</td><td>${esc(r['担当'])}</td>
-   <td><select class="sel stsel" data-sheet="売掛台帳" data-col="請求ID" data-id="${esc(r['請求ID'])}" style="width:auto;padding:3px 7px;font-size:12px">${S.boot.statuses.map(s=>`<option ${r['状態']===s?'selected':''}>${s}</option>`).join('')}</select></td>
-   <td>${r['PDF']?`<a href="${esc(String(r['PDF']).split('\n')[0])}" target="_blank">開く</a>`:''}</td></tr>`).join('')||'<tr><td colspan="10" class="empty">まだありません</td></tr>'}</table></div></div>`;
+  const today=S.boot.today, thisM=today.slice(0,7);
+  const all=S.ar.filter(r=>r['状態']!=='取消');
+  const making=all.filter(r=>['作成待ち','確認待ち','作成済'].includes(r['状態']));
+  const waiting=all.filter(r=>isUnpaid(r));            // 送付済・未入金・催促中
+  const paid=all.filter(r=>r['状態']==='入金済');
+  const late=waiting.filter(r=>daysLate(r)>0);
+
+  const g={};
+  waiting.forEach(r=>{ const m=ymd(r['支払期日']).slice(0,7)||'未定'; (g[m]=g[m]||[]).push(r); });
+  const months=Object.keys(g).filter(k=>k!=='未定').sort();
+  const over=months.filter(m=>m<thisM), rest=months.filter(m=>m>=thisM);
+
+  const head=`<div class="tiles">
+    <div class="tile"><div class="l">今月（${Number(thisM.slice(5,7))}月）入る予定</div><div class="v">${yen(sumAr(g[thisM]||[]))}</div><div class="s">${(g[thisM]||[]).length}件</div></div>
+    <div class="tile${late.length?' bad':''}"><div class="l">期日を過ぎている</div><div class="v">${yen(sumAr(late))}</div><div class="s">${late.length}件</div></div>
+    <div class="tile${making.length?' warn':''}"><div class="l">まだ送っていない</div><div class="v">${yen(sumAr(making))}</div><div class="s">${making.length}件</div></div>
+  </div>`;
+
+  const block=(m,warn)=>`<div class="card" style="padding:0">
+    <div class="mhead${warn?' warn':''}"><span>${warn?'⚠ ':''}${m==='未定'?'入金期日が入っていないもの':`${m.slice(0,4)}年${Number(m.slice(5,7))}月に入る予定`}</span><span>${g[m].length}件　<b>${yen(sumAr(g[m]))}</b></span></div>
+    ${arTable(g[m].slice().sort((a,b)=>String(a['取引先']).localeCompare(String(b['取引先']))))}</div>`;
+
+  let body=over.map(m=>block(m,true)).join('')+rest.map(m=>block(m,false)).join('');
+  if(g['未定']) body+=block('未定',false);
+  if(!body) body='<div class="card"><div class="empty">入金待ちはありません</div></div>';
+
+  const mk=making.length?`<div class="card" style="padding:0"><div class="mhead warn"><span>まだ送っていない請求</span><span>${making.length}件　<b>${yen(sumAr(making))}</b></span></div>
+    <div style="padding:10px 14px;font-size:13px;color:var(--mute)">押すと中身を確認できます。PDFを作って下書きまで進めてください。</div>${arTable(making)}</div>`:'';
+
+  return `<p class="sub">出した請求と、入金の予定。入る月ごとに分けています。入金を確認したら「入金済」に変えてください。</p>
+  ${head}${mk}${body}
+  <details class="card" style="padding:0"><summary class="mhead" style="cursor:pointer"><span>入金が終わったもの</span><span>${paid.length}件　<b>${yen(sumAr(paid))}</b></span></summary>${arTable(paid.slice().sort((a,b)=>String(b['入金日']||'').localeCompare(String(a['入金日']||''))))}</details>`;
 }
 
 function itemRowEdit(i,n){ return `<div class="split irow2" style="gap:8px;margin-bottom:6px;grid-template-columns:2fr 80px 1fr"><input name="ename${n}" class="sel" value="${esc(i.name||'')}" placeholder="品目"><input name="eqty${n}" class="sel" type="number" min="1" step="1" value="${i.qty||1}"><input name="eunit${n}" class="sel" type="number" step="1" value="${i.unit==null?'':i.unit}" placeholder="単価（税抜）"></div>`; }
