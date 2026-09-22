@@ -369,7 +369,7 @@ function vAr(){
   const over=months.filter(m=>m<thisM), rest=months.filter(m=>m>=thisM);
 
   const head=`<div class="tiles">
-    <div class="tile"><div class="l">今月（${Number(thisM.slice(5,7))}月）入る予定</div><div class="v">${yen(sumAr(g[thisM]||[]))}</div><div class="s">${(g[thisM]||[]).length}件</div></div>
+    <div class="tile"><div class="l">今月（${Number(thisM.slice(5,7))}月）入る予定</div><div class="v">${yen(sumAr((g[thisM]||[]).filter(r=>daysLate(r)<=0)))}</div><div class="s">${(g[thisM]||[]).filter(r=>daysLate(r)<=0).length}件</div></div>
     <div class="tile${late.length?' bad':''}"><div class="l">期日を過ぎている</div><div class="v">${yen(sumAr(late))}</div><div class="s">${late.length}件</div></div>
     <div class="tile${making.length?' warn':''}"><div class="l">まだ送っていない</div><div class="v">${yen(sumAr(making))}</div><div class="s">${making.length}件</div></div>
   </div>`;
