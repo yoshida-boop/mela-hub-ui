@@ -364,6 +364,9 @@ function arTable(rows){
   }).join('')||'<tr><td colspan="8" class="empty">ありません</td></tr>'}</table></div>`;
 }
 const sumAr = rows => rows.reduce((s,r)=>s+(Number(r['税込'])||0),0);
+// Driveの /view は閲覧画面。保存したいときは直接ダウンロードのURLにする
+const driveId = u => { const m=String(u||'').match(/[-\w]{25,}/); return m?m[0]:''; };
+const driveDl = u => { const id=driveId(u); return id?`https://drive.google.com/uc?export=download&id=${id}`:''; };
 
 function vAr(){
   const today=S.boot.today, thisM=today.slice(0,7);
@@ -429,6 +432,7 @@ function vInvoice(){
     </form></div>`;
   return `<div class="tools"><select id="invsel" class="sel" style="width:auto;max-width:440px">${S.ar.map(r=>`<option value="${esc(r['請求ID'])}" ${r['請求ID']===inv['請求ID']?'selected':''}>${esc(r['請求ID'])}　${esc(r['取引先'])}　${yen(r['税込'])}　${esc(r['状態'])}</option>`).join('')}</select>${pill(st)}<span class="sp"></span>
    ${canPdf?`<button class="btn pri" id="mkpdf">${st==='作成済'?'PDFと下書きを作り直す':'PDFを作って下書きへ'}</button>`:''}
+   ${inv['PDF']?`<a class="btn" href="${esc(driveDl(inv['PDF']))}" download>PDFを保存</a><a class="btn" href="${esc(String(inv['PDF']).split('\n')[0])}" target="_blank" rel="noopener">PDFを開く</a>`:''}
    ${inv['PDF']?`<a class="btn" href="${esc(String(inv['PDF']).split('\n')[0])}" target="_blank">PDFを開く</a>`:''}
    ${inv['下書きURL']?`<a class="btn" href="${esc(inv['下書きURL'])}" target="_blank">Gmail下書きを開く</a>`:''}
    ${st==='作成済'?`<button class="btn" id="marksent">送った → 送付済にする</button>`:''}
@@ -717,6 +721,7 @@ function renderInner(){
           <a class="btn pri" href="${esc(r.share)}" target="_blank" rel="noopener">LINEを開いて送る</a>
           <button class="btn" id="linecopy">文面をコピー</button>
           <a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">PDFを開く</a>
+          <a class="btn" href="${esc(driveDl(r.url))}" download>PDFを保存</a>
         </div></div>`;
       const cp=document.getElementById('linecopy');
       cp.onclick=async()=>{ const t=document.getElementById('linetext');
