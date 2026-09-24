@@ -433,6 +433,7 @@ function vInvoice(){
    ${inv['下書きURL']?`<a class="btn" href="${esc(inv['下書きURL'])}" target="_blank">Gmail下書きを開く</a>`:''}
    ${st==='作成済'?`<button class="btn" id="marksent">送った → 送付済にする</button>`:''}
    ${isUnpaid(inv)?`<button class="btn" id="markpaid">入金を確認した → 入金済</button>`:''}
+   ${Number(inv['税込'])?`<button class="btn${inv['状態']==='入金済'?' pri':''}" id="mkrcpt">領収書を作って下書きへ</button>`:''}
    ${isDraft?'':`<button class="btn" id="editon">内容を直す</button>`}</div>
   ${String(inv['メモ']||'').startsWith('LINE')?`<div class="note">${esc(inv['メモ'])}</div>`:''}
   ${form}
@@ -700,6 +701,15 @@ function renderInner(){
     busy(true);
     try{ if(a) await call('api_setSecret','ANTHROPIC_API_KEY',a); if(gg) await call('api_setSecret','GEMINI_API_KEY',gg);
       toast('保存しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
+  const mr=document.getElementById('mkrcpt'); if(mr) mr.onclick=async()=>{
+    const lbl=mr.textContent; busy(true); mr.disabled=true; mr.textContent='領収書を作っています…';
+    try{
+      const r=await call('api_makeReceipt',S.sel,{});
+      toast(r.draft?'領収書とGmailの下書きを作りました':'領収書を作りました（送付先メール未登録のため下書きなし）');
+      if(r.draft) window.open(r.draft,'_blank'); else if(r.pdf) window.open(r.pdf,'_blank');
+      await refresh();
+    }catch(e){ toast('失敗: '+(e.message||e)); }
+    finally{ busy(false); mr.disabled=false; mr.textContent=lbl; } };
   const mk=document.getElementById('mkpdf'); if(mk) mk.onclick=async()=>{ busy(true); toast('PDFを作っています…'); try{ const r=await call('api_makePdfAndDraft',S.sel); toast(r.draft?'PDFとGmail下書きを作りました':'PDFを作りました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false);} };
   const ms=document.getElementById('marksent'); if(ms) ms.onclick=async()=>{ await call('api_setStatus','売掛台帳','請求ID',S.sel,'送付済'); toast('送付済にしました'); await refresh(); };
   ['markpaid','markpaid2'].forEach(id=>{ const b=document.getElementById(id); if(b) b.onclick=async()=>{ await call('api_setStatus','売掛台帳','請求ID',S.sel,'入金済'); toast('入金済にしました'); await refresh(); }; });
