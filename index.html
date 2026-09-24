@@ -40,6 +40,9 @@ h1{font-size:21px;margin:0 0 4px}.sub{color:var(--mute);margin:0 0 16px;font-siz
 .card h2{font-size:14.5px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .card h2 small{font-weight:400;color:var(--mute);font-size:12px}
 .hint{display:block;font-size:11.5px;color:var(--mute);font-weight:400;margin-top:3px}
+.shot{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
+.shot-h{font-size:13.5px;font-weight:700;margin-bottom:3px}
+.shot-s{font-size:12px;color:var(--mute);line-height:1.6;margin-bottom:9px}
 .mhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:11px 15px;border-bottom:1px solid var(--line);font-size:14px;font-weight:700;background:rgba(0,0,0,.02)}
 .mhead.warn{color:var(--bad);background:rgba(200,40,40,.05)}
 .mhead b{font-variant-numeric:tabular-nums}
@@ -304,6 +307,13 @@ function vNew(){
     <div class="sayall">つなげて言うだけ →「結びさんに9月分のコンサルで25万、請求お願い」</div>
     <textarea class="vt" id="vtext" placeholder="話した内容がここに出ます。直接書いても、キーボードのマイクを使ってもかまいません。"></textarea>
     <div class="tools" style="margin-top:12px"><button class="btn pri big" id="vgo">この内容で下書きを作る</button><button class="btn" id="vclear">消す</button></div>
+    <div class="shot">
+      <div class="shot-h">写真から作る</div>
+      <div class="shot-s">見積書・納品書・手書きのメモ・チャットの画面など、金額が写っていれば読み取ります。上の欄に補足を書いておくと、それも一緒に読みます。</div>
+      <input type="file" id="vfile" accept="image/*" style="display:none">
+      <div class="tools"><button class="btn" id="vshot">写真を選ぶ／撮る</button><span id="vfname" style="font-size:12px;color:var(--mute)"></span></div>
+      <div id="vprev"></div>
+    </div>
     <div class="exwrap"><div class="exlabel">こんな言い方もできます（押すと入ります）</div>
       <span class="ex1">アクロシーズさん、いつものコンサル費で今月分</span>
       <span class="ex1">シンクロニシティさんに9月のコンサル、税込で27万5千円</span>
@@ -577,6 +587,27 @@ function toggleMic(){
 }
 
 function busy(b){ S.busy=b; document.querySelectorAll('.btn.pri').forEach(x=>x.disabled=b); }
+// 写真はそのまま送ると数MBになる。長辺1600pxに縮めてから送る
+function shrinkImage(file, max){
+  max=max||1600;
+  return new Promise((ok,ng)=>{
+    const fr=new FileReader();
+    fr.onerror=()=>ng(new Error('read'));
+    fr.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>ng(new Error('decode'));
+      img.onload=()=>{
+        const k=Math.min(1,max/Math.max(img.width,img.height));
+        const c=document.createElement('canvas');
+        c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+        c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+        ok(c.toDataURL('image/jpeg',0.85));
+      };
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
 const TITLES={bill:'請求する',pay:'支払う'};
 function bindSegs(){
   document.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('button').forEach(b=>b.onclick=()=>{
@@ -622,6 +653,25 @@ function renderInner(){
       else toast(r&&r.reply?r.reply.split('\n')[0]:'取引先か金額が読み取れませんでした');
     }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); vg.textContent=lbl; } };
   const vc=document.getElementById('vclear'); if(vc) vc.onclick=()=>{ document.getElementById('vtext').value=''; };
+  const vs=document.getElementById('vshot'), vf=document.getElementById('vfile');
+  if(vs&&vf){
+    vs.onclick=()=>vf.click();
+    vf.onchange=async()=>{
+      const f=vf.files&&vf.files[0]; if(!f) return;
+      document.getElementById('vfname').textContent=f.name;
+      let url;
+      try{ url=await shrinkImage(f); }catch(e){ toast('画像を読み込めませんでした'); return; }
+      document.getElementById('vprev').innerHTML=`<img src="${url}" style="max-width:220px;border:1px solid var(--line);border-radius:8px;margin-top:8px">`;
+      const lbl=vs.textContent; busy(true); vs.textContent='読み取っています… 20秒ほど';
+      try{
+        const note=document.getElementById('vtext').value.trim();
+        const r=await call('api_imageDraft',url,'画面',note);
+        if(r&&r.id){ S.sel=r.id; S.view='bill'; S.sub.bill='invoice'; toast('下書きを作りました。内容を確認してください'); await refresh(); }
+        else toast(r&&r.reply?r.reply.split('\n')[0]:'読み取れませんでした');
+      }catch(e){ toast('失敗: '+(e.message||e)); }
+      finally{ busy(false); vs.textContent=lbl; vf.value=''; }
+    };
+  }
   m.querySelectorAll('.ex1').forEach(x=>x.onclick=()=>{ const ta=document.getElementById('vtext'); ta.value=x.textContent; ta.focus(); });
   const eo=document.getElementById('editon'); if(eo) eo.onclick=()=>{ S.edit=S.sel; render(); };
   m.querySelectorAll('.apfill').forEach(inp=>inp.onchange=async()=>{
