@@ -40,6 +40,15 @@ h1{font-size:21px;margin:0 0 4px}.sub{color:var(--mute);margin:0 0 16px;font-siz
 .card h2{font-size:14.5px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .card h2 small{font-weight:400;color:var(--mute);font-size:12px}
 .hint{display:block;font-size:11.5px;color:var(--mute);font-weight:400;margin-top:3px}
+#working{position:fixed;inset:0;background:rgba(255,255,255,.82);backdrop-filter:blur(2px);z-index:9999;display:flex;align-items:center;justify-content:center}
+.wk{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px 30px;max-width:340px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.12)}
+.spin{width:38px;height:38px;border:4px solid var(--line);border-top-color:var(--accent,#E8456B);border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.wkt{font-size:16px;font-weight:700}.wks{font-size:12.5px;color:var(--mute);margin-top:6px;line-height:1.6}.wkc{font-size:12px;color:var(--mute);margin-top:10px;font-variant-numeric:tabular-nums;min-height:1em}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.th{position:relative;width:88px;height:88px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.th img{width:100%;height:100%;object-fit:cover;display:block}
+.thx{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:14px;line-height:22px;padding:0;cursor:pointer}
 .shot{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
 .shot-h{font-size:13.5px;font-weight:700;margin-bottom:3px}
 .shot-s{font-size:12px;color:var(--mute);line-height:1.6;margin-bottom:9px}
@@ -310,9 +319,9 @@ function vNew(){
     <div class="shot">
       <div class="shot-h">写真から作る</div>
       <div class="shot-s">見積書・納品書・手書きのメモ・チャットの画面など、金額が写っていれば読み取ります。上の欄に補足を書いておくと、それも一緒に読みます。</div>
-      <input type="file" id="vfile" accept="image/*" style="display:none">
-      <div class="tools"><button class="btn" id="vshot">写真を選ぶ／撮る</button><span id="vfname" style="font-size:12px;color:var(--mute)"></span></div>
-      <div id="vprev"></div>
+      <input type="file" id="vfile" accept="image/*" multiple style="display:none">
+      <div class="tools"><button class="btn" id="vshot">写真を選ぶ／撮る（複数可）</button><button class="btn pri" id="vgoimg" hidden>この写真から下書きを作る</button><span id="vfname" style="font-size:12px;color:var(--mute)"></span></div>
+      <div id="vprev" class="thumbs"></div>
     </div>
     <div class="exwrap"><div class="exlabel">こんな言い方もできます（押すと入ります）</div>
       <span class="ex1">アクロシーズさん、いつものコンサル費で今月分</span>
@@ -594,6 +603,16 @@ function toggleMic(){
 }
 
 function busy(b){ S.busy=b; document.querySelectorAll('.btn.pri').forEach(x=>x.disabled=b); }
+// 生成中は画面全体を覆って「止まっていない」ことを見せる。経過秒が動くのが要点
+let _wk=null;
+function showWorking(title, sub, timer){
+  hideWorking();
+  const el=document.createElement('div'); el.id='working';
+  el.innerHTML=`<div class="wk"><div class="spin"></div><div class="wkt">${esc(title)}</div><div class="wks">${esc(sub||'')}</div><div class="wkc" id="wkc"></div></div>`;
+  document.body.appendChild(el); busy(true);
+  if(timer){ const t0=Date.now(); const c=document.getElementById('wkc'); _wk=setInterval(()=>{ const s=Math.floor((Date.now()-t0)/1000); c.textContent=`${s}秒経過`+(s>45?'　もう少しかかっています':''); },500); }
+}
+function hideWorking(){ if(_wk){ clearInterval(_wk); _wk=null; } const el=document.getElementById('working'); if(el) el.remove(); busy(false); }
 // 写真はそのまま送ると数MBになる。長辺1600pxに縮めてから送る
 function shrinkImage(file, max){
   max=max||1600;
@@ -653,83 +672,44 @@ function renderInner(){
   const vg=document.getElementById('vgo'); if(vg) vg.onclick=async()=>{
     const t=document.getElementById('vtext').value.trim();
     if(!t){ toast('内容を話すか入力してください'); return; }
-    stopMic(); busy(true);
-    const lbl=vg.textContent; vg.textContent='読み取っています… 20秒ほどかかります';
+    stopMic();
+    showWorking('AIが読み取っています', '話した内容から取引先・品目・金額を読み取って下書きにします。だいたい20秒です。', true);
     try{ const r=await call('api_voiceDraft',t,'画面');
-      if(r&&r.id){ S.sel=r.id; S.view='bill'; S.sub.bill='invoice'; toast('下書きを作りました。内容を確認してください'); await refresh(); }
-      else toast(r&&r.reply?r.reply.split('\n')[0]:'取引先か金額が読み取れませんでした');
-    }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); vg.textContent=lbl; } };
+      if(r&&r.id){ S.sel=r.id; S.view='bill'; S.sub.bill='invoice'; hideWorking(); toast('下書きを作りました。内容を確認してください'); await refresh(); }
+      else { hideWorking(); toast(r&&r.reply?r.reply.split('\n')[0]:'取引先か金額が読み取れませんでした'); }
+    }catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); } };
   const vc=document.getElementById('vclear'); if(vc) vc.onclick=()=>{ document.getElementById('vtext').value=''; };
-  const vs=document.getElementById('vshot'), vf=document.getElementById('vfile');
-  if(vs&&vf){
+  const vs=document.getElementById('vshot'), vf=document.getElementById('vfile'), vgi=document.getElementById('vgoimg');
+  if(vs&&vf&&vgi){
+    S.imgs = S.imgs || [];
+    const drawThumbs=()=>{
+      const box=document.getElementById('vprev');
+      box.innerHTML=S.imgs.map((u,i)=>`<div class="th"><img src="${u}"><button class="thx" data-i="${i}" title="外す">×</button></div>`).join('');
+      box.querySelectorAll('.thx').forEach(b=>b.onclick=()=>{ S.imgs.splice(Number(b.dataset.i),1); drawThumbs(); });
+      vgi.hidden = !S.imgs.length;
+      document.getElementById('vfname').textContent = S.imgs.length ? `${S.imgs.length}枚` : '';
+    };
+    drawThumbs();
     vs.onclick=()=>vf.click();
     vf.onchange=async()=>{
-      const f=vf.files&&vf.files[0]; if(!f) return;
-      document.getElementById('vfname').textContent=f.name;
-      let url;
-      try{ url=await shrinkImage(f); }catch(e){ toast('画像を読み込めませんでした'); return; }
-      document.getElementById('vprev').innerHTML=`<img src="${url}" style="max-width:220px;border:1px solid var(--line);border-radius:8px;margin-top:8px">`;
-      const lbl=vs.textContent; busy(true); vs.textContent='読み取っています… 20秒ほど';
+      const files=[...(vf.files||[])]; if(!files.length) return;
+      showWorking('写真を読み込んでいます', `${files.length}枚を縮小中…`);
+      try{ for(const f of files){ S.imgs.push(await shrinkImage(f)); if(S.imgs.length>=8) break; } }
+      catch(e){ toast('画像を読み込めませんでした'); }
+      finally{ hideWorking(); vf.value=''; drawThumbs(); }
+    };
+    vgi.onclick=async()=>{
+      if(!S.imgs.length) return;
+      const note=document.getElementById('vtext').value.trim();
+      const n=S.imgs.length;
+      showWorking('AIが読み取っています', `${n}枚の画像を送りました。品目・金額・宛名を読み取って下書きにします。だいたい20〜40秒です。`, true);
       try{
-        const note=document.getElementById('vtext').value.trim();
-        const r=await call('api_imageDraft',url,'画面',note);
-        if(r&&r.id){ S.sel=r.id; S.view='bill'; S.sub.bill='invoice'; toast('下書きを作りました。内容を確認してください'); await refresh(); }
-        else toast(r&&r.reply?r.reply.split('\n')[0]:'読み取れませんでした');
-      }catch(e){ toast('失敗: '+(e.message||e)); }
-      finally{ busy(false); vs.textContent=lbl; vf.value=''; }
+        const r=await call('api_imageDraft',S.imgs,'画面',note);
+        if(r&&r.id){ S.imgs=[]; S.sel=r.id; S.view='bill'; S.sub.bill='invoice'; hideWorking(); toast('下書きを作りました。内容を確認してください'); await refresh(); }
+        else { hideWorking(); toast(r&&r.reply?r.reply.split('\n')[0]:'読み取れませんでした'); }
+      }catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); }
     };
   }
-  m.querySelectorAll('.ex1').forEach(x=>x.onclick=()=>{ const ta=document.getElementById('vtext'); ta.value=x.textContent; ta.focus(); });
-  const eo=document.getElementById('editon'); if(eo) eo.onclick=()=>{ S.edit=S.sel; render(); };
-  m.querySelectorAll('.apfill').forEach(inp=>inp.onchange=async()=>{
-    const v=inp.value.trim(); if(!v) return;
-    const patch={}; patch[inp.dataset.col]= inp.dataset.col==='税込金額' ? Number(v) : v;
-    inp.disabled=true;
-    try{ await call('api_patchRow','買掛台帳','受領ID',inp.dataset.id,patch); toast('入れました'); await refresh(); }
-    catch(e){ toast('失敗: '+(e.message||e)); inp.disabled=false; }
-  });
-  const rap=document.getElementById('readap'); if(rap) rap.onclick=async()=>{
-    const lbl=rap.textContent; busy(true); rap.textContent='読んでいます…';
-    try{ const r=await call('api_readPayables',5);
-      const got=(r.results||[]).filter(x=>x.ok).length;
-      toast(`${got}件読めました。残り${r.left}件`); await refresh();
-    }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); rap.textContent=lbl; } };
-  const ea=document.getElementById('eadditem'); if(ea) ea.onclick=()=>{ const box=document.getElementById('eitems'); box.insertAdjacentHTML('beforeend', itemRowEdit({},box.querySelectorAll('.irow2').length+1)); };
-  const es=document.getElementById('esave'); if(es) es.onclick=async()=>{
-    const f=document.getElementById('editform'); const g=n=>(f.elements[n]||{}).value||'';
-    const cnt=f.querySelectorAll('.irow2').length; const items=[];
-    for(let n=1;n<=cnt;n++){ if(g('ename'+n)) items.push({name:g('ename'+n),qty:Number(g('eqty'+n)||1),unit:g('eunit'+n)===''?null:Number(g('eunit'+n))}); }
-    busy(true);
-    try{ await call('api_updateInvoice',S.sel,{entityId:segVal('eentity'),to:g('to'),subject:g('subject'),mail:g('mail'),via:g('via'),staff:g('staff'),date:g('date'),due:g('due'),accountId:segVal('eaccount'),items});
-      toast('保存しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
-  const sk=document.getElementById('savekeys'); if(sk) sk.onclick=async()=>{
-    const a=document.getElementById('aikey').value.trim(), gg=document.getElementById('gkey').value.trim();
-    busy(true);
-    try{ if(a) await call('api_setSecret','ANTHROPIC_API_KEY',a); if(gg) await call('api_setSecret','GEMINI_API_KEY',gg);
-      toast('保存しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
-  const lb=document.getElementById('lineinv'); if(lb) lb.onclick=async()=>{
-    const box=document.getElementById('linebox');
-    box.innerHTML=`<div class="card"><div class="empty">リンクを作っています…</div></div>`;
-    busy(true);
-    try{
-      const kind = inv['状態']==='入金済' ? 'receipt' : 'invoice';
-      const r=await call('api_shareForLine',S.sel,kind);
-      box.innerHTML=`<div class="card"><h2>LINEで送る<small>${kind==='receipt'?'領収書':'請求書'}</small></h2>
-        <div class="note" style="margin-bottom:10px">PDFを「リンクを知っている人が見られる」状態にしました。リンクを知らない人は開けません。</div>
-        <textarea class="mail" id="linetext" style="height:190px">${esc(r.text)}</textarea>
-        <div class="tools" style="margin-top:10px">
-          <a class="btn pri" href="${esc(r.share)}" target="_blank" rel="noopener">LINEを開いて送る</a>
-          <button class="btn" id="linecopy">文面をコピー</button>
-          <a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">PDFを開く</a>
-          <a class="btn" href="${esc(driveDl(r.url))}" download>PDFを保存</a>
-        </div></div>`;
-      const cp=document.getElementById('linecopy');
-      cp.onclick=async()=>{ const t=document.getElementById('linetext');
-        try{ await navigator.clipboard.writeText(t.value); toast('コピーしました'); }
-        catch(e){ t.select(); document.execCommand('copy'); toast('コピーしました'); } };
-      await refresh();
-    }catch(e){ box.innerHTML=`<div class="card"><div class="note">失敗: ${esc(e.message||e)}</div></div>`; }
-    finally{ busy(false); } };
   const mr=document.getElementById('mkrcpt'); if(mr) mr.onclick=async()=>{
     const lbl=mr.textContent; busy(true); mr.disabled=true; mr.textContent='領収書を作っています…';
     try{
