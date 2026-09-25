@@ -710,6 +710,56 @@ function renderInner(){
       }catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); }
     };
   }
+  const eo=document.getElementById('editon'); if(eo) eo.onclick=()=>{ S.edit=S.sel; render(); };
+  m.querySelectorAll('.apfill').forEach(inp=>inp.onchange=async()=>{
+    const v=inp.value.trim(); if(!v) return;
+    const patch={}; patch[inp.dataset.col]= inp.dataset.col==='税込金額' ? Number(v) : v;
+    inp.disabled=true;
+    try{ await call('api_patchRow','買掛台帳','受領ID',inp.dataset.id,patch); toast('入れました'); await refresh(); }
+    catch(e){ toast('失敗: '+(e.message||e)); inp.disabled=false; }
+  });
+  const rap=document.getElementById('readap'); if(rap) rap.onclick=async()=>{
+    const lbl=rap.textContent; busy(true); rap.textContent='読んでいます…';
+    try{ const r=await call('api_readPayables',5);
+      const got=(r.results||[]).filter(x=>x.ok).length;
+      toast(`${got}件読めました。残り${r.left}件`); await refresh();
+    }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); rap.textContent=lbl; } };
+  const ea=document.getElementById('eadditem'); if(ea) ea.onclick=()=>{ const box=document.getElementById('eitems'); box.insertAdjacentHTML('beforeend', itemRowEdit({},box.querySelectorAll('.irow2').length+1)); };
+  const es=document.getElementById('esave'); if(es) es.onclick=async()=>{
+    const f=document.getElementById('editform'); const g=n=>(f.elements[n]||{}).value||'';
+    const cnt=f.querySelectorAll('.irow2').length; const items=[];
+    for(let n=1;n<=cnt;n++){ if(g('ename'+n)) items.push({name:g('ename'+n),qty:Number(g('eqty'+n)||1),unit:g('eunit'+n)===''?null:Number(g('eunit'+n))}); }
+    busy(true);
+    try{ await call('api_updateInvoice',S.sel,{entityId:segVal('eentity'),to:g('to'),subject:g('subject'),mail:g('mail'),via:g('via'),staff:g('staff'),date:g('date'),due:g('due'),accountId:segVal('eaccount'),items});
+      toast('保存しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
+  const sk=document.getElementById('savekeys'); if(sk) sk.onclick=async()=>{
+    const a=document.getElementById('aikey').value.trim(), gg=document.getElementById('gkey').value.trim();
+    busy(true);
+    try{ if(a) await call('api_setSecret','ANTHROPIC_API_KEY',a); if(gg) await call('api_setSecret','GEMINI_API_KEY',gg);
+      toast('保存しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
+  const lb=document.getElementById('lineinv'); if(lb) lb.onclick=async()=>{
+    const box=document.getElementById('linebox');
+    box.innerHTML=`<div class="card"><div class="empty">リンクを作っています…</div></div>`;
+    busy(true);
+    try{
+      const kind = inv['状態']==='入金済' ? 'receipt' : 'invoice';
+      const r=await call('api_shareForLine',S.sel,kind);
+      box.innerHTML=`<div class="card"><h2>LINEで送る<small>${kind==='receipt'?'領収書':'請求書'}</small></h2>
+        <div class="note" style="margin-bottom:10px">PDFを「リンクを知っている人が見られる」状態にしました。リンクを知らない人は開けません。</div>
+        <textarea class="mail" id="linetext" style="height:190px">${esc(r.text)}</textarea>
+        <div class="tools" style="margin-top:10px">
+          <a class="btn pri" href="${esc(r.share)}" target="_blank" rel="noopener">LINEを開いて送る</a>
+          <button class="btn" id="linecopy">文面をコピー</button>
+          <a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">PDFを開く</a>
+          <a class="btn" href="${esc(driveDl(r.url))}" download>PDFを保存</a>
+        </div></div>`;
+      const cp=document.getElementById('linecopy');
+      cp.onclick=async()=>{ const t=document.getElementById('linetext');
+        try{ await navigator.clipboard.writeText(t.value); toast('コピーしました'); }
+        catch(e){ t.select(); document.execCommand('copy'); toast('コピーしました'); } };
+      await refresh();
+    }catch(e){ box.innerHTML=`<div class="card"><div class="note">失敗: ${esc(e.message||e)}</div></div>`; }
+    finally{ busy(false); } };
   const mr=document.getElementById('mkrcpt'); if(mr) mr.onclick=async()=>{
     const lbl=mr.textContent; busy(true); mr.disabled=true; mr.textContent='領収書を作っています…';
     try{
