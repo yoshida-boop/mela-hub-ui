@@ -442,7 +442,6 @@ function vInvoice(){
   return `<div class="tools"><select id="invsel" class="sel" style="width:auto;max-width:440px">${S.ar.map(r=>`<option value="${esc(r['請求ID'])}" ${r['請求ID']===inv['請求ID']?'selected':''}>${esc(r['請求ID'])}　${esc(r['取引先'])}　${yen(r['税込'])}　${esc(r['状態'])}</option>`).join('')}</select>${pill(st)}<span class="sp"></span>
    ${canPdf?`<button class="btn pri" id="mkpdf">${st==='作成済'?'PDFと下書きを作り直す':'PDFを作って下書きへ'}</button>`:''}
    ${inv['PDF']?`<a class="btn" href="${esc(driveDl(inv['PDF']))}" download>PDFを保存</a><a class="btn" href="${esc(String(inv['PDF']).split('\n')[0])}" target="_blank" rel="noopener">PDFを開く</a>`:''}
-   ${inv['PDF']?`<a class="btn" href="${esc(String(inv['PDF']).split('\n')[0])}" target="_blank">PDFを開く</a>`:''}
    ${inv['下書きURL']?`<a class="btn" href="${esc(inv['下書きURL'])}" target="_blank">Gmail下書きを開く</a>`:''}
    ${st==='作成済'?`<button class="btn" id="marksent">送った → 送付済にする</button>`:''}
    ${isUnpaid(inv)?`<button class="btn" id="markpaid">入金を確認した → 入金済</button>`:''}
