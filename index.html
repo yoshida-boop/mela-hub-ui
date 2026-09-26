@@ -49,6 +49,7 @@ h1{font-size:21px;margin:0 0 4px}.sub{color:var(--mute);margin:0 0 16px;font-siz
 .th{position:relative;width:88px;height:88px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .th img{width:100%;height:100%;object-fit:cover;display:block}
 .thx{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:14px;line-height:22px;padding:0;cursor:pointer}
+.btn.danger{color:var(--bad);border-color:var(--bad)}.btn.danger:hover{background:rgba(200,40,40,.06)}
 .shot{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
 .shot-h{font-size:13.5px;font-weight:700;margin-bottom:3px}
 .shot-s{font-size:12px;color:var(--mute);line-height:1.6;margin-bottom:9px}
@@ -161,8 +162,8 @@ const _qs = new URLSearchParams(location.search);
 
 const VIEWS = [['home','ホーム'],['bill','請求する'],['pay','支払う'],['docs','書類'],['settings','設定']];
 const SUBS = {
-  bill: [['new','話して作る'],['ar','請求の一覧'],['invoice','請求書を見る'],['dun','催促']],
-  pay:  [['ap','受け取った請求'],['expense','立替・経費'],['line','LINEに届いたもの']],
+  bill: [['new','作る'],['ar','一覧'],['invoice','確認・送付'],['dun','催促']],
+  pay:  [['ap','一覧'],['expense','立替・経費'],['line','LINE受信']],
 };
 const LEGACY = {ar:['bill','ar'],invoice:['bill','invoice'],dun:['bill','dun'],new:['bill','new'],ap:['pay','ap'],line:['pay','line'],expense:['pay','expense']};
 const PILL = {'作成待ち':'p-grey','確認待ち':'p-warn','作成済':'p-info','送付済':'p-info','入金済':'p-ok','未入金':'p-warn','催促中':'p-bad','取消':'p-grey','支払予定':'p-info','支払済':'p-ok','未請求':'p-warn','請求済':'p-ok'};
@@ -447,12 +448,39 @@ function vInvoice(){
    ${isUnpaid(inv)?`<button class="btn" id="markpaid">入金を確認した → 入金済</button>`:''}
    ${Number(inv['税込'])?`<button class="btn${inv['状態']==='入金済'?' pri':''}" id="mkrcpt">領収書を作って下書きへ</button>`:''}
    ${Number(inv['税込'])?`<button class="btn" id="lineinv">LINEで送る</button>`:''}
-   ${isDraft?'':`<button class="btn" id="editon">内容を直す</button>`}</div>
+   ${isDraft?'':`<button class="btn" id="editon">内容を直す</button>`}
+   ${st!=='入金済'?`<button class="btn danger" id="delinv">この請求を削除</button>`:''}</div>
+   <div id="sendbox"></div>
    <div id="linebox"></div>
   ${String(inv['メモ']||'').startsWith('LINE')?`<div class="note">${esc(inv['メモ'])}</div>`:''}
   ${form}
   ${!inv.items||!inv.items.length?`<div class="note">過去にinvoyで出した分の取り込みなので品目データがありません。PDFはDriveの保存分を開いてください。</div>`:''}
   <div class="paperwrap"><iframe class="paper" id="paperframe" sandbox="allow-same-origin"></iframe></div>`;
+}
+async function showSendCard(){
+  const box=document.getElementById('sendbox'); if(!box) return;
+  box.innerHTML=`<div class="card" id="sendcard"><div class="empty">下書きを読み込んでいます…</div></div>`;
+  let d; try{ d=await call('api_draftPreview',S.sel); }catch(e){ box.innerHTML=`<div class="card" id="sendcard"><div class="note">失敗: ${esc(e.message||e)}</div></div>`; return; }
+  if(!d.draftId){
+    box.innerHTML=`<div class="card" id="sendcard"><h2>Driveに保存しました</h2>
+      <div class="note">${d.folder?esc(d.folder):''}${d.pdf?`　<a href="${esc(d.pdf)}" target="_blank" rel="noopener">PDFを開く</a>`:''}</div>
+      <div class="hint" style="margin-top:8px">送付先メールが登録されていないため、メールの下書きは作っていません。「内容を直す」で送付先を入れるか、「LINEで送る」を使ってください。</div></div>`;
+    return;
+  }
+  box.innerHTML=`<div class="card" id="sendcard"><h2>送る前に確認<small>Driveに保存済み：${esc(d.folder||'')}</small></h2>
+    <label class="fl">宛先<input class="sel" id="sd_to" value="${esc(d.to)}"></label>
+    <label class="fl">件名<input class="sel" id="sd_subject" value="${esc(d.subject)}"></label>
+    <label class="fl">本文<textarea class="mail" id="sd_body" style="height:260px">${esc(d.body)}</textarea></label>
+    <div class="hint">添付：${d.attachments.map(esc).join('、')||'なし'}　／　CC：invoice@melagrp.com</div>
+    <div class="tools" style="margin-top:12px"><button class="btn pri big" id="sd_send">このメールを送信する</button><span class="hint">押すとGmailから送信されます。取り消せません。</span></div></div>`;
+  document.getElementById('sd_send').onclick=async()=>{
+    const to=document.getElementById('sd_to').value.trim();
+    if(!confirm(`${to} に送信します。よろしいですか？`)) return;
+    showWorking('送信しています', '', true);
+    try{ const r=await call('api_sendDraft',S.sel,{to, subject:document.getElementById('sd_subject').value, body:document.getElementById('sd_body').value});
+      hideWorking(); toast(`送信しました → ${r.to}`); S.showSend=null; await refresh();
+    }catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); }
+  };
 }
 async function loadPaper(){
   const f=document.getElementById('paperframe'); if(!f||!S.sel) return;
@@ -768,7 +796,22 @@ function renderInner(){
       await refresh();
     }catch(e){ toast('失敗: '+(e.message||e)); }
     finally{ busy(false); mr.disabled=false; mr.textContent=lbl; } };
-  const mk=document.getElementById('mkpdf'); if(mk) mk.onclick=async()=>{ busy(true); toast('PDFを作っています…'); try{ const r=await call('api_makePdfAndDraft',S.sel); toast(r.draft?'PDFとGmail下書きを作りました':'PDFを作りました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false);} };
+  const mk=document.getElementById('mkpdf'); if(mk) mk.onclick=async()=>{
+    showWorking('PDFを作っています', 'PDFを作ってDriveに保存し、Gmailの下書きを用意します。10秒ほどです。', true);
+    try{ const r=await call('api_makePdfAndDraft',S.sel);
+      hideWorking();
+      toast(r.folder?`Driveに保存しました：${r.folder}`:'PDFを作りました');
+      S.showSend=S.sel; await refresh();
+    }catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); } };
+  if(S.showSend===S.sel && document.getElementById('sendbox') && !document.getElementById('sendcard')) showSendCard();
+  const dl=document.getElementById('delinv'); if(dl) dl.onclick=async()=>{
+    const ok=confirm(`請求 ${inv['請求ID']}（${inv['取引先']} / ${yen(inv['税込'])}）を削除します。\nDriveのPDFとGmailの下書きも一緒に消えます。元に戻せません。\n\n削除しますか？`);
+    if(!ok) return;
+    showWorking('削除しています', '台帳・Drive・Gmail下書きを片付けています。', true);
+    try{ const r=await call('api_deleteInvoice',S.sel);
+      hideWorking(); toast(`削除しました（PDF ${r.files}件${r.draft?'・下書き1件':''}）`);
+      S.sel=null; S.sub.bill='ar'; await refresh();
+    }catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); } };
   const ms=document.getElementById('marksent'); if(ms) ms.onclick=async()=>{ await call('api_setStatus','売掛台帳','請求ID',S.sel,'送付済'); toast('送付済にしました'); await refresh(); };
   ['markpaid','markpaid2'].forEach(id=>{ const b=document.getElementById(id); if(b) b.onclick=async()=>{ await call('api_setStatus','売掛台帳','請求ID',S.sel,'入金済'); toast('入金済にしました'); await refresh(); }; });
   const md=document.getElementById('mkdun'); if(md) md.onclick=async()=>{ busy(true); try{ const r=await call('api_dunningDraft',S.sel); document.getElementById('dunbody').value=r.text; toast(r.draft?'Gmailに催促の下書きを作りました':'メール未登録のため文面だけ作りました'); if(r.draft) window.open(r.draft,'_blank'); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false);} };
