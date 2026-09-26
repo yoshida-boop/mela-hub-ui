@@ -757,8 +757,10 @@ function renderInner(){
     const cnt=f.querySelectorAll('.irow2').length; const items=[];
     for(let n=1;n<=cnt;n++){ if(g('ename'+n)) items.push({name:g('ename'+n),qty:Number(g('eqty'+n)||1),unit:g('eunit'+n)===''?null:Number(g('eunit'+n))}); }
     busy(true);
-    try{ await call('api_updateInvoice',S.sel,{entityId:segVal('eentity'),to:g('to'),subject:g('subject'),mail:g('mail'),via:g('via'),staff:g('staff'),date:g('date'),due:g('due'),accountId:segVal('eaccount'),items});
-      toast('保存しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
+    try{ const r=await call('api_updateInvoice',S.sel,{entityId:segVal('eentity'),to:g('to'),subject:g('subject'),mail:g('mail'),via:g('via'),staff:g('staff'),date:g('date'),due:g('due'),accountId:segVal('eaccount'),items});
+      // 法人を変えると番号が振り直される。新しい番号を追いかけないと「見つかりません」になる
+      if(r&&r.id&&r.id!==S.sel){ const old=S.sel; S.sel=r.id; if(S.edit===old) S.edit=r.id; if(S.showSend===old) S.showSend=r.id; }
+      toast(r&&r.renumbered?`保存しました。法人を変えたので番号が ${r.id} になりました`:'保存しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
   const sk=document.getElementById('savekeys'); if(sk) sk.onclick=async()=>{
     const a=document.getElementById('aikey').value.trim(), gg=document.getElementById('gkey').value.trim();
     busy(true);
