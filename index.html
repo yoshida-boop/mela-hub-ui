@@ -773,7 +773,8 @@ function renderInner(){
     box.innerHTML=`<div class="card"><div class="empty">リンクを作っています…</div></div>`;
     busy(true);
     try{
-      const kind = inv['状態']==='入金済' ? 'receipt' : 'invoice';
+      const cur=S.ar.find(r=>r['請求ID']===S.sel)||{};
+      const kind = cur['状態']==='入金済' ? 'receipt' : 'invoice';
       const r=await call('api_shareForLine',S.sel,kind);
       box.innerHTML=`<div class="card"><h2>LINEで送る<small>${kind==='receipt'?'領収書':'請求書'}</small></h2>
         <div class="note" style="margin-bottom:10px">PDFを「リンクを知っている人が見られる」状態にしました。リンクを知らない人は開けません。</div>
