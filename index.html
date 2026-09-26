@@ -192,6 +192,8 @@ async function call(fn, ...args){
   if(!j.ok) throw new Error(j.error||'error');
   return j.result;
 }
+window.addEventListener('unhandledrejection', e=>{ try{ toast('エラー: '+((e.reason&&e.reason.message)||e.reason)); }catch(_){} });
+window.addEventListener('error', e=>{ try{ toast('エラー: '+(e.message||'不明')); }catch(_){} });
 function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),4000); }
 function daysLate(r){ if(!r['支払期日']) return 0; return Math.floor((new Date(S.boot.today)-new Date(r['支払期日']))/86400000); }
 const isUnpaid = r => ['送付済','未入金','催促中'].includes(r['状態']);
@@ -807,7 +809,8 @@ function renderInner(){
     }catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); } };
   if(S.showSend===S.sel && document.getElementById('sendbox') && !document.getElementById('sendcard')) showSendCard();
   const dl=document.getElementById('delinv'); if(dl) dl.onclick=async()=>{
-    const ok=confirm(`請求 ${inv['請求ID']}（${inv['取引先']} / ${yen(inv['税込'])}）を削除します。\nDriveのPDFとGmailの下書きも一緒に消えます。元に戻せません。\n\n削除しますか？`);
+    const cur=S.ar.find(r=>r['請求ID']===S.sel)||{};
+    const ok=confirm(`請求 ${cur['請求ID']||S.sel}（${cur['取引先']||''} / ${yen(cur['税込'])}）を削除します。\nDriveのPDFとGmailの下書きも一緒に消えます。元に戻せません。\n\n削除しますか？`);
     if(!ok) return;
     showWorking('削除しています', '台帳・Drive・Gmail下書きを片付けています。', true);
     try{ const r=await call('api_deleteInvoice',S.sel);
