@@ -71,6 +71,12 @@ details.more.memo{margin:10px 0}
 .shot{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
 .shot-h{font-size:13.5px;font-weight:700;margin-bottom:3px}
 .shot-s{font-size:12px;color:var(--mute);line-height:1.6;margin-bottom:9px}
+.etile{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0 4px}
+.etile>div{display:flex;flex-direction:column;gap:2px}.etile b{font-size:17px;font-variant-numeric:tabular-nums;line-height:1.2}.etile small{font-size:11px;color:var(--mute)}
+.tile.bad .etile b{color:var(--bad)}
+.esec{border-top:1px solid var(--line)}
+.ehead{display:flex;align-items:center;gap:8px;padding:8px 15px;font-size:12.5px;background:rgba(0,0,0,.015)}
+.ehead .en{color:var(--mute)}.ehead .esum{margin-left:auto;font-variant-numeric:tabular-nums}
 .mhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:11px 15px;border-bottom:1px solid var(--line);font-size:14px;font-weight:700;background:rgba(0,0,0,.02)}
 .mhead.warn{color:var(--bad);background:rgba(200,40,40,.05)}
 .mhead b{font-variant-numeric:tabular-nums}
@@ -585,29 +591,38 @@ function vAp(){
   live.forEach(r=>{ const m=ymd(r['支払期日']).slice(0,7)||'未定'; (g[m]=g[m]||[]).push(r); });
   const months=Object.keys(g).filter(k=>k!=='未定').sort();
   const over=months.filter(m=>m<thisM), rest=months.filter(m=>m>=thisM);
+  const ENT=[['E01','株式会社mela'],['E02','株式会社mela gym']];
+  const by=(rows,e)=>rows.filter(r=>r['法人']===e);
+  const pick=ms=>ms.reduce((a,m)=>a.concat(g[m]||[]),[]);
 
-  const thisSum=sumYen(g[thisM]||[]);
-  const overSum=over.reduce((s,m)=>s+sumYen(g[m]),0);
-  const laterSum=rest.filter(m=>m!==thisM).reduce((s,m)=>s+sumYen(g[m]),0);
+  // 会社ごとの数字を並べる小さな表。振込元の口座が違うので、合算より先にこれを見る
+  const entTiles=(rows)=>`<div class="etile">${ENT.map(([e,n])=>`<div><span class="ent ${e}">${e==='E01'?'mela':'mela gym'}</span><b>${yen(sumYen(by(rows,e)))}</b><small>${by(rows,e).length}件</small></div>`).join('')}</div>`;
+  const thisRows=(g[thisM]||[]), overRows=pick(over), laterRows=pick(rest.filter(m=>m!==thisM));
   const head=`<div class="tiles">
-    <div class="tile"><div class="l">今月（${Number(thisM.slice(5,7))}月）に払う</div><div class="v">${yen(thisSum)}</div><div class="s">${(g[thisM]||[]).length}件</div></div>
-    <div class="tile${overSum?' bad':''}"><div class="l">期限を過ぎている</div><div class="v">${yen(overSum)}</div><div class="s">${over.reduce((s,m)=>s+g[m].length,0)}件</div></div>
-    <div class="tile"><div class="l">来月以降</div><div class="v">${yen(laterSum)}</div><div class="s">${rest.filter(m=>m!==thisM).reduce((s,m)=>s+g[m].length,0)}件</div></div>
+    <div class="tile"><div class="l">今月（${Number(thisM.slice(5,7))}月）に払う</div>${entTiles(thisRows)}<div class="s">合計 ${yen(sumYen(thisRows))}</div></div>
+    <div class="tile${overRows.length?' bad':''}"><div class="l">期限を過ぎている</div>${entTiles(overRows)}<div class="s">合計 ${yen(sumYen(overRows))}</div></div>
+    <div class="tile"><div class="l">来月以降</div>${entTiles(laterRows)}<div class="s">合計 ${yen(sumYen(laterRows))}</div></div>
   </div>`;
+
+  const entBlocks=(rows, editable)=>ENT.map(([e,n])=>{
+    const rs=by(rows,e).slice().sort((a,b)=>String(a['取引先']).localeCompare(String(b['取引先'])));
+    if(!rs.length) return '';
+    return `<div class="esec"><div class="ehead"><span class="ent ${e}">${e==='E01'?'mela':'mela gym'}</span><span class="en">${esc(n)} から振込</span><span class="esum">${rs.length}件　<b>${yen(sumYen(rs))}</b></span></div>${editable?apTableFill(rs):apTable(rs)}</div>`;
+  }).join('');
 
   const block=(m,warn)=>`<div class="card" style="padding:0">
     <div class="mhead${warn?' warn':''}"><span>${warn?'⚠ ':''}${monthLabel(m)}</span><span>${g[m].length}件　<b>${yen(sumYen(g[m]))}</b></span></div>
-    ${apTable(g[m].sort((a,b)=>String(a['取引先']).localeCompare(String(b['取引先']))))}</div>`;
+    ${entBlocks(g[m],false)}</div>`;
 
   let body=over.map(m=>block(m,true)).join('')+rest.map(m=>block(m,false)).join('');
   if(g['未定']) body+=`<div class="card" style="padding:0"><div class="mhead"><span>${monthLabel('未定')}</span><span>${g['未定'].length}件　<b>${yen(sumYen(g['未定']))}</b></span></div>
     <div style="padding:10px 14px"><div style="font-size:13px;color:var(--mute);margin-bottom:8px">まだPDFを読んでいないものです。「PDFを読む」を押すと、金額・支払期日・登録番号を読み取って上の月ごとの表に移します。1回で5件ずつ、30秒ほどかかります。</div>
-    <button class="btn pri" id="readap">PDFを読む</button></div>${apTableFill(g['未定'])}</div>`;
+    <button class="btn pri" id="readap">PDFを読む</button></div>${entBlocks(g['未定'],true)}</div>`;
   if(!body) body='<div class="card"><div class="empty">支払い待ちはありません</div></div>';
 
-  return `<p class="sub">受け取った請求書と、こちらが出した支払通知書。支払う月ごとに分けています。振り込んだら「支払済」に変えてください。</p>
+  return `<p class="sub">受け取った請求書と、こちらが出した支払通知書。支払う月ごとに分け、その中で振込元の会社ごとに分けています。振り込んだら「支払済」に変えてください。</p>
   ${head}${body}
-  <details class="card" style="padding:0"><summary class="mhead" style="cursor:pointer"><span>支払い終わったもの</span><span>${paid.length}件　<b>${yen(sumYen(paid))}</b></span></summary>${apTable(paid.slice().sort((a,b)=>String(b['支払日']||'').localeCompare(String(a['支払日']||''))))}</details>`;
+  <details class="card" style="padding:0"><summary class="mhead" style="cursor:pointer"><span>支払い終わったもの</span><span>${paid.length}件　<b>${yen(sumYen(paid))}</b></span></summary>${entBlocks(paid.slice().sort((a,b)=>String(b['支払日']||'').localeCompare(String(a['支払日']||''))),false)}</details>`;
 }
 function vExpense(){
   const a=S.expenses;
