@@ -440,7 +440,7 @@ function vAr(){
 
   return `<p class="sub">出した請求と、入金の予定。入る月ごとに分けています。入金を確認したら「入金済」に変えてください。</p>
   ${head}${mk}${body}
-  <details class="card" style="padding:0"><summary class="mhead" style="cursor:pointer"><span>入金が終わったもの</span><span>${paid.length}件　<b>${yen(sumAr(paid))}</b></span></summary>${paidMonths(paid,'入金日','入金期日').map(([m,rs])=>`<div class="pm"><div class="pmhead"><span>${m==='不明'?'入金日が入っていないもの':`${m.slice(0,4)}年${Number(m.slice(5,7))}月に入ったもの`}</span><span>${rs.length}件　<b>${yen(sumAr(rs))}</b></span></div>${arTable(rs)}</div>`).join('')}</details>`;
+  <details class="card" style="padding:0"><summary class="mhead" style="cursor:pointer"><span>入金が終わったもの</span><span>${paid.length}件　<b>${yen(sumAr(paid))}</b></span></summary>${paidMonths(paid,'入金日','支払期日').map(([m,rs])=>`<div class="pm"><div class="pmhead"><span>${m==='不明'?'入金日が入っていないもの':`${m.slice(0,4)}年${Number(m.slice(5,7))}月に入ったもの`}</span><span>${rs.length}件　<b>${yen(sumAr(rs))}</b></span></div>${arTable(rs)}</div>`).join('')}</details>`;
 }
 
 function itemRowEdit(i,n){ return `<div class="split irow2" style="gap:8px;margin-bottom:6px;grid-template-columns:2fr 80px 1fr"><input name="ename${n}" class="sel" value="${esc(i.name||'')}" placeholder="品目"><input name="eqty${n}" class="sel" type="number" min="1" step="1" value="${i.qty||1}"><input name="eunit${n}" class="sel" type="number" step="1" value="${i.unit==null?'':i.unit}" placeholder="単価（税抜）"></div>`; }
