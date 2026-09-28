@@ -597,7 +597,9 @@ function vAp(){
 
   // 会社ごとの数字を並べる小さな表。振込元の口座が違うので、合算より先にこれを見る
   const entTiles=(rows)=>`<div class="etile">${ENT.map(([e,n])=>`<div><span class="ent ${e}">${e==='E01'?'mela':'mela gym'}</span><b>${yen(sumYen(by(rows,e)))}</b><small>${by(rows,e).length}件</small></div>`).join('')}</div>`;
-  const thisRows=(g[thisM]||[]), overRows=pick(over), laterRows=pick(rest.filter(m=>m!==thisM));
+  // 「期限を過ぎている」は月単位ではなく今日基準。今月中でも期日を過ぎていれば赤に入れる
+  const overRows=live.filter(r=>{ const d=ymd(r['支払期日']); return d && d<today; });
+  const thisRows=(g[thisM]||[]).filter(r=>!(ymd(r['支払期日'])<today)), laterRows=pick(rest.filter(m=>m!==thisM));
   const head=`<div class="tiles">
     <div class="tile"><div class="l">今月（${Number(thisM.slice(5,7))}月）に払う</div>${entTiles(thisRows)}<div class="s">合計 ${yen(sumYen(thisRows))}</div></div>
     <div class="tile${overRows.length?' bad':''}"><div class="l">期限を過ぎている</div>${entTiles(overRows)}<div class="s">合計 ${yen(sumYen(overRows))}</div></div>
