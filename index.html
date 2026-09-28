@@ -83,6 +83,7 @@ details.more.memo{margin:10px 0}
 .mhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:11px 15px;border-bottom:1px solid var(--line);font-size:14px;font-weight:700;background:rgba(0,0,0,.02)}
 .mhead.warn{color:var(--bad);background:rgba(200,40,40,.05)}
 .mhead b{font-variant-numeric:tabular-nums}
+.pm{border-top:1px solid var(--line)}.pmhead{display:flex;justify-content:space-between;align-items:baseline;padding:9px 15px;font-size:13px;font-weight:700;color:var(--mute);background:rgba(0,0,0,.015)}.pmhead b{font-variant-numeric:tabular-nums;color:var(--fg)}
 details.card>summary{list-style:none}details.card>summary::-webkit-details-marker{display:none}
 details.card>summary::after{content:'▾';margin-left:6px;color:var(--mute)}
 details.card[open]>summary::after{content:'▴'}
@@ -439,7 +440,7 @@ function vAr(){
 
   return `<p class="sub">出した請求と、入金の予定。入る月ごとに分けています。入金を確認したら「入金済」に変えてください。</p>
   ${head}${mk}${body}
-  <details class="card" style="padding:0"><summary class="mhead" style="cursor:pointer"><span>入金が終わったもの</span><span>${paid.length}件　<b>${yen(sumAr(paid))}</b></span></summary>${arTable(paid.slice().sort((a,b)=>String(b['入金日']||'').localeCompare(String(a['入金日']||''))))}</details>`;
+  <details class="card" style="padding:0"><summary class="mhead" style="cursor:pointer"><span>入金が終わったもの</span><span>${paid.length}件　<b>${yen(sumAr(paid))}</b></span></summary>${paidMonths(paid,'入金日','入金期日').map(([m,rs])=>`<div class="pm"><div class="pmhead"><span>${m==='不明'?'入金日が入っていないもの':`${m.slice(0,4)}年${Number(m.slice(5,7))}月に入ったもの`}</span><span>${rs.length}件　<b>${yen(sumAr(rs))}</b></span></div>${arTable(rs)}</div>`).join('')}</details>`;
 }
 
 function itemRowEdit(i,n){ return `<div class="split irow2" style="gap:8px;margin-bottom:6px;grid-template-columns:2fr 80px 1fr"><input name="ename${n}" class="sel" value="${esc(i.name||'')}" placeholder="品目"><input name="eqty${n}" class="sel" type="number" min="1" step="1" value="${i.qty||1}"><input name="eunit${n}" class="sel" type="number" step="1" value="${i.unit==null?'':i.unit}" placeholder="単価（税抜）"></div>`; }
@@ -556,6 +557,13 @@ function vDun(){
 }
 
 const sumYen = rows => rows.reduce((s,r)=>s+(Number(r['税込金額'])||0),0);
+// 終わったものは実際に動いた日で月を切る。日付が無い行は期日で代用し、それも無ければ末尾に「不明」でまとめる
+const paidMonths=(rows,dateCol='支払日',dueCol='支払期日')=>{
+  const g={};
+  rows.forEach(r=>{ const m=(ymd(r[dateCol])||ymd(r[dueCol])||'').slice(0,7)||'不明'; (g[m]=g[m]||[]).push(r); });
+  return Object.keys(g).sort((a,b)=>a==='不明'?1:b==='不明'?-1:b.localeCompare(a))
+    .map(m=>[m,g[m].slice().sort((a,b)=>String(b[dateCol]||'').localeCompare(String(a[dateCol]||'')))]);
+};
 const monthLabel = m => m==='未定' ? '金額・期日が読めていないもの（合計に未反映）' : `${m.slice(0,4)}年${Number(m.slice(5,7))}月に払う`;
 
 function apRows(rows){
@@ -633,7 +641,7 @@ function vAp(){
 
   return `<p class="sub">受け取った請求書と、こちらが出した支払通知書。支払う月ごとに分け、その中で振込元の会社ごとに分けています。振り込んだら「支払済」に変えてください。</p>
   ${head}${body}
-  <details class="card" style="padding:0"><summary class="mhead" style="cursor:pointer"><span>支払い終わったもの</span><span>${paid.length}件　<b>${yen(sumYen(paid))}</b></span></summary>${entBlocks(paid.slice().sort((a,b)=>String(b['支払日']||'').localeCompare(String(a['支払日']||''))),false)}</details>`;
+  <details class="card" style="padding:0"><summary class="mhead" style="cursor:pointer"><span>支払い終わったもの</span><span>${paid.length}件　<b>${yen(sumYen(paid))}</b></span></summary>${paidMonths(paid).map(([m,rs])=>`<div class="pm"><div class="pmhead"><span>${m==='不明'?'支払日が入っていないもの':`${m.slice(0,4)}年${Number(m.slice(5,7))}月に払ったもの`}</span><span>${rs.length}件　<b>${yen(sumYen(rs))}</b></span></div>${entBlocks(rs,false)}</div>`).join('')}</details>`;
 }
 function vExpense(){
   const a=S.expenses;
