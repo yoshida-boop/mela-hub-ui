@@ -83,7 +83,7 @@ details.more.memo{margin:10px 0}
 .mhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:11px 15px;border-bottom:1px solid var(--line);font-size:14px;font-weight:700;background:rgba(0,0,0,.02)}
 .mhead.warn{color:var(--bad);background:rgba(200,40,40,.05)}
 .mhead b{font-variant-numeric:tabular-nums}
-tr.koff td{opacity:.55}
+.klist{display:flex;flex-direction:column;gap:8px;margin-top:6px}.krow{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}.krow.koff .kmain{opacity:.55}.kname{font-weight:700;font-size:14px}.ksub{font-size:12px;color:var(--mute);margin-top:1px}.kmeta{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin-top:4px}.kmeta b{color:var(--fg);font-variant-numeric:tabular-nums}.kact{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px}.kform{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
 .pm{border-top:1px solid var(--line)}.pmhead{display:flex;justify-content:space-between;align-items:baseline;padding:9px 15px;font-size:13px;font-weight:700;color:var(--mute);background:rgba(0,0,0,.015)}.pmhead b{font-variant-numeric:tabular-nums;color:var(--fg)}
 details.card>summary{list-style:none}details.card>summary::-webkit-details-marker{display:none}
 details.card>summary::after{content:'▾';margin-left:6px;color:var(--mute)}
@@ -343,11 +343,10 @@ function contractCard(){
   const made=k=>S.ar.find(r=>String(r['発生源'])==='契約:'+k['契約ID'] && ymd(r['請求日']).slice(0,7)===ym && r['状態']!=='取消');
   const limit=k=>{ const until=k['終了月']?ymd(k['終了月']).slice(0,7):''; const tot=Number(k['総回数'])||0; const done=Number(k['消化回数'])||0;
     if(tot) return `${done}/${tot}回${done>=tot?'（終了）':''}`; if(until) return `${ymJa(until)}まで${until<thisM?'（終了）':''}`; return '期限なし'; };
-  const rows=list.map(k=>{ const m=made(k); const off=k['有効']!=='ON'; const amt=k['税抜金額']===''||k['税抜金額']==null?'変動':yen(k['税抜金額'])+'<small style="color:var(--mute)">＋税</small>';
-    return `<tr class="${off?'koff':''}"><td>${esc(k['取引先名']||'')}</td><td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${esc(k['件名'])}</td><td class="r">${amt}</td><td>${limit(k)}${off?' <span class="pill p-grey">停止中</span>':''}</td>
-    <td>${m?`<span class="pill ${PILL[m['状態']]||'p-grey'}">${ymJa(ym)}分 ${m['状態']}</span> <button class="btn sm kopen" data-id="${esc(m['請求ID'])}">開く</button>`:`<button class="btn sm pri kmake" data-k="${esc(k['契約ID'])}">${ymJa(ym)}分を作る</button>`}</td>
-    <td><button class="btn sm kedit" data-k="${esc(k['契約ID'])}">設定</button></td></tr>
-    <tr class="kform" data-k="${esc(k['契約ID'])}" hidden><td colspan="6"><div class="split" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px">
+  const rows=list.map(k=>{ const m=made(k); const off=k['有効']!=='ON'; const amt=k['税抜金額']===''||k['税抜金額']==null?'金額は毎月入力':yen(k['税抜金額'])+'<small style="color:var(--mute)">＋税</small>';
+    return `<div class="krow${off?' koff':''}"><div class="kmain"><div class="kname">${esc(k['取引先名']||'')}${off?' <span class="pill p-grey">停止中</span>':''}</div><div class="ksub">${esc(k['件名'])}</div><div class="kmeta"><b>${amt}</b><span>${limit(k)}</span><span>期日 ${esc(k['期日ルール']||'翌月末')}</span></div></div>
+    <div class="kact">${m?`<span class="pill ${PILL[m['状態']]||'p-grey'}">${ymJa(ym)}分 ${m['状態']}</span><button class="btn sm kopen" data-id="${esc(m['請求ID'])}">開く</button>`:`<button class="btn sm pri kmake" data-k="${esc(k['契約ID'])}">${ymJa(ym)}分を作る</button>`}<button class="btn sm kedit" data-k="${esc(k['契約ID'])}">設定</button></div>
+    <div class="kform" data-k="${esc(k['契約ID'])}" hidden><div class="split" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px">
       <label class="fl">件名<input class="sel" name="ksubject" value="${esc(k['件名'])}"></label>
       <label class="fl">税抜金額（空欄＝毎月変わる）<input class="sel" name="kamount" type="number" value="${k['税抜金額']===''||k['税抜金額']==null?'':k['税抜金額']}"></label>
       <label class="fl">終了月（空欄＝期限なし）<input class="sel" name="kuntil" type="month" value="${k['終了月']?ymd(k['終了月']).slice(0,7):''}"></label>
@@ -355,11 +354,11 @@ function contractCard(){
       <label class="fl">支払期日の決め方<select class="sel" name="kdue">${['翌月末','当月末','翌々月末','なし'].map(x=>`<option ${(k['期日ルール']||'翌月末')===x?'selected':''}>${x}</option>`).join('')}</select></label>
       <label class="fl">送付先メール<input class="sel" name="kmail" value="${esc(k['送付先メール']||'')}"></label>
       <label class="fl" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" name="kactive" style="width:auto" ${off?'':'checked'}> 毎月自動で作る（外すと停止）</label>
-    </div><div class="tools" style="margin-top:8px"><button class="btn pri sm ksave" data-k="${esc(k['契約ID'])}">この設定で保存</button><button class="btn sm kforce" data-k="${esc(k['契約ID'])}">期間外でも${ymJa(ym)}分を作る</button><span style="font-size:12px;color:var(--mute)">${esc(k['契約ID'])}</span></div></td></tr>`; }).join('');
+    </div><div class="tools" style="margin-top:8px"><button class="btn pri sm ksave" data-k="${esc(k['契約ID'])}">この設定で保存</button><button class="btn sm kforce" data-k="${esc(k['契約ID'])}">期間外でも${ymJa(ym)}分を作る</button><span style="font-size:12px;color:var(--mute)">${esc(k['契約ID'])}</span></div></div></div>`; }).join('');
   return `<div class="card"><h2>毎月の請求（定型）<small>登録してある請求から、その月の分を作ります。毎月20日には翌月分が自動でできます</small></h2>
     <div class="fl"><b>どの会社の定型か</b><div class="seg" data-seg="kent">${(S.boot.entities||[]).map(e=>`<button type="button" data-val="${e['法人ID']}" class="${ent===e['法人ID']?'on':''}"><b>${esc(e['正式名'])}</b><small>${all.filter(k=>k['法人ID']===e['法人ID']).length}件</small></button>`).join('')}</div></div>
     <div class="fl" style="flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap"><b>どの月の分を作るか</b><select class="sel" id="kym" style="width:auto">${[-1,0,1,2].map(n=>ymShift(thisM,n)).map(x=>`<option value="${x}" ${x===ym?'selected':''}>${ymJa(x)}分${x===thisM?'（今月）':''}</option>`).join('')}</select></div>
-    ${S.contractsLoading?'<div class="empty">読み込み中…</div>':list.length?`<div class="tw"><table><tr><th>宛名</th><th>件名</th><th class="r">金額</th><th>いつまで</th><th>${ymJa(ym)}分</th><th></th></tr>${rows}</table></div>`:'<div class="empty">この会社の定型はまだありません。下の「自分で入力する」で作るときに「毎月の定型にする」を付けると、ここに並びます。</div>'}
+    ${S.contractsLoading?'<div class="empty">読み込み中…</div>':list.length?`<div class="klist">${rows}</div>`:'<div class="empty">この会社の定型はまだありません。下の「自分で入力する」で作るときに「毎月の定型にする」を付けると、ここに並びます。</div>'}
   </div>`;
 }
 function vNew(){
