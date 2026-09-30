@@ -189,13 +189,14 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbwXOKcewGxJTEUf2IfNTWgE
 let CODE = 'q3sqawj3';
 const _qs = new URLSearchParams(location.search);
 
-const VIEWS = [['home','ホーム'],['bill','請求する'],['pay','支払う'],['docs','書類'],['settings','設定']];
+const VIEWS = [['home','ホーム'],['bill','請求する'],['quote','見積もる'],['pay','支払う'],['docs','書類'],['settings','設定']];
 const SUBS = {
   bill: [['new','作る'],['ar','一覧'],['invoice','確認・送付'],['dun','催促']],
+  quote: [['qnew','作る'],['qlist','一覧'],['qview','確認・送付']],
   pay:  [['ap','一覧'],['expense','立替・経費'],['line','LINE受信']],
 };
 const LEGACY = {ar:['bill','ar'],invoice:['bill','invoice'],dun:['bill','dun'],new:['bill','new'],ap:['pay','ap'],line:['pay','line'],expense:['pay','expense']};
-const PILL = {'作成待ち':'p-grey','確認待ち':'p-warn','作成済':'p-info','送付済':'p-info','入金済':'p-ok','未入金':'p-warn','催促中':'p-bad','取消':'p-grey','支払予定':'p-info','支払済':'p-ok','未請求':'p-warn','請求済':'p-ok'};
+const PILL = {'作成中':'p-warn','受注':'p-ok','失注':'p-grey','作成待ち':'p-grey','確認待ち':'p-warn','作成済':'p-info','送付済':'p-info','入金済':'p-ok','未入金':'p-warn','催促中':'p-bad','取消':'p-grey','支払予定':'p-info','支払済':'p-ok','未請求':'p-warn','請求済':'p-ok'};
 
 const S = { view:'home', sub:{}, boot:null, ar:[], ap:[], line:[], expenses:[], tree:null, dash:null, sel:_qs.get('id')||null, filter:'all', busy:false, edit:null };
 (function initView(){
@@ -231,7 +232,7 @@ const isUnpaid = r => ['送付済','未入金','催促中'].includes(r['状態']
 
 function applyAll(d){
   S.boot = {today:d.today, entities:d.entities||[], accounts:d.accounts||[], clients:d.clients||[], staff:d.staff||[], statuses:d.statuses||[], ledgerUrl:d.ledgerUrl, hubUrl:d.hubUrl, secrets:d.secrets||{}};
-  S.ar=d.ar||[]; S.ap=d.ap||[]; S.line=d.line||[]; S.expenses=d.expenses||[]; S.dash=d.dash||null;
+  S.quotes=null; S.ar=d.ar||[]; S.ap=d.ap||[]; S.line=d.line||[]; S.expenses=d.expenses||[]; S.dash=d.dash||null;
   document.getElementById('foot').innerHTML = `<a href="${S.boot.hubUrl}" target="_blank">Driveを開く</a><a href="${S.boot.ledgerUrl}" target="_blank">台帳を開く</a>`;
 }
 function cacheSave(d){ try{ localStorage.setItem('melahub-cache', JSON.stringify({t:Date.now(),d})); }catch(e){} }
@@ -259,7 +260,8 @@ function counts(){
   const dun=S.ar.filter(r=>isUnpaid(r)&&daysLate(r)>0).length;
   const todo=S.ar.filter(r=>['確認待ち','作成待ち','作成済'].includes(r['状態'])).length;
   const payDue=S.ap.filter(r=>['確認待ち','支払予定'].includes(r['状態'])).length;
-  return {bill:todo+dun, pay:payDue, home:0, docs:0, settings:0,
+  const qtodo=(S.quotes||[]).filter(r=>['作成中','作成済'].includes(r['状態'])).length;
+  return {bill:todo+dun, pay:payDue, home:0, docs:0, settings:0, quote:qtodo, qnew:0, qlist:0, qview:qtodo,
           new:0, ar:S.ar.length, invoice:0, dun:dun, ap:payDue,
           expense:S.expenses.filter(r=>r['請求先']==='未割当').length,
           line:S.line.filter(r=>r['状態']==='未処理').length};
@@ -542,7 +544,7 @@ function vInvoice(){
     stage!==2 && isUnpaid(inv) ? `<button class="btn" id="markpaid">入金を確認した → 入金済</button>` : '',
     stage!==3 && Number(inv['税込']) ? `<button class="btn" id="mkrcpt">領収書を作る</button>` : (stage===3 && rcptDone ? `<button class="btn" id="mkrcpt">領収書をもう一度作る</button>` : ''),
     isDraft ? '' : `<button class="btn" id="editon">内容を直す</button>`,
-    st!=='入金済' ? `<button class="btn danger" id="delinv">この請求を削除</button>` : '',
+    st!=='入金済' && stage>1 ? `<button class="btn danger" id="delinv">この請求を削除</button>` : '',
   ].filter(Boolean).join('');
   const memo = String(inv['メモ']||'');
   return `<select id="invsel" class="sel wide">${S.ar.map(r=>`<option value="${esc(r['請求ID'])}" ${r['請求ID']===inv['請求ID']?'selected':''}>${esc(r['取引先'])}　${yen(r['税込'])}　${esc(r['状態'])}　${esc(r['請求ID'])}</option>`).join('')}</select>
@@ -550,7 +552,7 @@ function vInvoice(){
     <div class="hrow"><div class="hname">${esc(inv['取引先'])}${/御中|様$/.test(String(inv['取引先']))?'':' 様'}</div><div class="hamt">${yen(inv['税込'])}</div></div>
     <div class="hsub">${esc(inv['請求ID'])}　${pill(st)}　請求日 ${ymd(inv['請求日'])||'—'}　期日 ${ymd(inv['支払期日'])||'—'}${isUnpaid(inv)&&daysLate(inv)>0?`　<span style="color:var(--bad);font-weight:700">${daysLate(inv)}日超過</span>`:''}</div>
     ${steps}
-    <div class="hnext"><div class="hint" style="margin-bottom:6px">次にやること　${nextHint}</div>${primary}</div>
+    <div class="hnext"><div class="hint" style="margin-bottom:6px">次にやること　${nextHint}</div>${primary}${stage<=1?`<div class="hint" style="margin-top:8px">試しに作っただけなら <button class="btn sm danger" id="delinv">この請求を削除</button>（DriveのPDFと下書きも消えます）</div>`:''}</div>
     <details class="more"><summary>その他の操作</summary><div class="tools">${secondary}</div></details>
   </div>
    <div id="sendbox"></div>
@@ -560,10 +562,11 @@ function vInvoice(){
   ${!inv.items||!inv.items.length?`<div class="note">過去にinvoyで出した分の取り込みなので品目データがありません。PDFはDriveの保存分を開いてください。</div>`:''}
   <div class="paperwrap"><iframe class="paper" id="paperframe" sandbox="allow-same-origin"></iframe></div>`;
 }
-async function showSendCard(){
+async function showSendCard(kind){
+  const isQ = kind==='quote';
   const box=document.getElementById('sendbox'); if(!box) return;
   box.innerHTML=`<div class="card" id="sendcard"><div class="empty">下書きを読み込んでいます…</div></div>`;
-  let d; try{ d=await call('api_draftPreview',S.sel); }catch(e){ box.innerHTML=`<div class="card" id="sendcard"><div class="note">失敗: ${esc(e.message||e)}</div></div>`; return; }
+  let d; try{ d=await call(isQ?'api_quoteDraftPreview':'api_draftPreview',isQ?S.qsel:S.sel); }catch(e){ box.innerHTML=`<div class="card" id="sendcard"><div class="note">失敗: ${esc(e.message||e)}</div></div>`; return; }
   if(!d.draftId){
     box.innerHTML=`<div class="card" id="sendcard"><h2>Driveに保存しました</h2>
       <div class="note">${d.folder?esc(d.folder):''}${d.pdf?`　<a href="${esc(d.pdf)}" target="_blank" rel="noopener">PDFを開く</a>`:''}</div>
@@ -580,8 +583,8 @@ async function showSendCard(){
     const to=document.getElementById('sd_to').value.trim();
     if(!confirm(`${to} に送信します。よろしいですか？`)) return;
     showWorking('送信しています', '', true);
-    try{ const r=await call('api_sendDraft',S.sel,{to, subject:document.getElementById('sd_subject').value, body:document.getElementById('sd_body').value});
-      hideWorking(); toast(`送信しました → ${r.to}`); S.showSend=null; await refresh();
+    try{ const r=await call(isQ?'api_sendQuoteDraft':'api_sendDraft',isQ?S.qsel:S.sel,{to, subject:document.getElementById('sd_subject').value, body:document.getElementById('sd_body').value});
+      hideWorking(); toast(`送信しました → ${r.to}`); S.showSend=null; S.qshowSend=null; await refresh();
     }catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); }
   };
 }
@@ -592,6 +595,155 @@ async function loadPaper(){
 function fitPaper(){ const w=document.querySelector('.paperwrap'),p=document.getElementById('paperframe'); if(!w||!p) return; const avail=w.clientWidth-28, pw=794; const k=Math.min(1,avail/pw); p.style.transform=`scale(${k})`; w.style.height=(1123*k+28)+'px'; }
 window.addEventListener('resize',fitPaper);
 
+// ---------------- 見積 ----------------
+function loadQuotes(){
+  if(S.quotes!=null || S.quotesLoading) return;
+  S.quotesLoading=true;
+  call('api_quotes').then(q=>{ S.quotes=q||[]; S.quotesLoading=false; if(S.view==='quote') render(); }).catch(e=>{ S.quotesLoading=false; S.quotes=[]; toast('見積の読み込みに失敗: '+(e.message||e)); });
+}
+function vQNew(){
+  const b=S.boot;
+  const clients=[...new Set(S.ar.map(r=>r['取引先']).concat(b.clients.map(c=>c['正式社名'])))].filter(Boolean);
+  const d=new Date(b.today);
+  const today=b.today, valid=new Date(d.getTime()+30*86400000).toISOString().slice(0,10);
+  const e0=(b.entities[0]||{})['法人ID']||'E01';
+  return `<div class="card"><h2>見積書を作る<small>作ったあと、PDF → メール下書き → 送信まで同じ画面で進めます。試しに作ったものはその場で削除できます</small></h2>
+  <form id="qform" onsubmit="return false">
+    <div class="fl"><b>どの会社から出す見積か</b>${segEntity('qentity',e0)}</div>
+    <div class="split"><div>
+      <label class="fl">宛名<input name="to" class="sel" list="qclients" placeholder="社名を入れると候補が出ます" autocomplete="off"></label><datalist id="qclients">${clients.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+      <label class="fl">件名<input name="subject" class="sel" placeholder="Webサイト制作一式"></label>
+      <label class="fl">送付先メール<input name="mail" class="sel" placeholder="下書きを作るなら入れる。空欄ならPDFだけ"></label>
+      <div class="split"><label class="fl">送付方法<select name="via" class="sel"><option>メール</option><option>LINE</option></select></label>
+      <label class="fl">担当<input name="staff" class="sel" list="qstaffs" autocomplete="off"><datalist id="qstaffs">${b.staff.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></label></div>
+    </div><div>
+      <div class="fl" style="display:block"><b>品目（単価は税抜）</b></div>
+      <div id="qitemrows">${itemRow(1)}${itemRow(2)}</div>
+      <button type="button" class="btn sm" id="qadditem" style="margin-bottom:12px">＋ 品目を追加</button>
+      <div class="split"><label class="fl">見積日<input name="date" class="sel" type="date" value="${today}"></label><label class="fl">有効期限<input name="valid" class="sel" type="date" value="${valid}"></label></div>
+      <label class="fl">備考（見積書に載ります）<textarea name="note" class="sel" style="height:70px" placeholder="納期・支払条件など。空欄なら定型文が入ります"></textarea></label>
+    </div></div>
+    <div class="tools" style="margin-top:8px"><button class="btn pri" id="qsubmit">見積を作って確認画面へ</button><span style="font-size:12px;color:var(--mute)">税は10%外税で自動計算</span></div>
+  </form></div>`;
+}
+async function submitQuote(){
+  const f=document.getElementById('qform'); const g=n=>(f.elements[n]||{}).value||'';
+  const cnt=f.querySelectorAll('.irow').length; const items=[];
+  for(let n=1;n<=cnt;n++){ if(g('item'+n)) items.push({name:g('item'+n),qty:1,unit:g('amt'+n)===''?null:Number(g('amt'+n))}); }
+  if(!g('to')||!g('subject')||!items.length){ toast('宛名・件名・品目を入れてください'); return; }
+  busy(true);
+  try{ const id=await call('api_createQuote',{entityId:segVal('qentity'),to:g('to'),subject:g('subject'),mail:g('mail'),via:g('via'),staff:g('staff'),items,date:g('date'),valid:g('valid'),note:g('note')});
+    S.quotes=null; S.qsel=id; S.sub.quote='qview'; toast('見積を作りました: '+id); render(); }
+  catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); }
+}
+function vQList(){
+  loadQuotes();
+  const q=S.quotes||[];
+  if(S.quotesLoading&&!q.length) return '<div class="empty">読み込み中…</div>';
+  if(!q.length) return '<div class="card"><div class="empty">見積はまだありません。「作る」から作れます。</div></div>';
+  return `<div class="card" style="padding:0"><div class="tw"><table><tr><th>会社</th><th>宛名</th><th>件名</th><th class="r">税込</th><th>見積日</th><th>有効期限</th><th>状態</th><th>PDF</th></tr>
+  ${q.map(r=>`<tr class="row" data-id="${esc(r['見積ID'])}" data-v="quote" data-s="qview" data-q="1"><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td><td style="max-width:240px;overflow:hidden;text-overflow:ellipsis">${esc(r['件名'])}</td><td class="r">${yen(r['税込'])}</td><td>${ymd(r['見積日'])}</td><td>${ymd(r['有効期限'])}</td><td>${pill(r['状態'])}${r['請求ID']?`<div style="font-size:11px;color:var(--mute)">→ ${esc(r['請求ID'])}</div>`:''}</td><td>${r['PDF']?`<a href="${esc(String(r['PDF']).split('\n')[0])}" target="_blank" rel="noopener">開く</a>`:'—'}</td></tr>`).join('')}</table></div></div>`;
+}
+function vQView(){
+  loadQuotes();
+  const q=S.quotes||[];
+  if(S.quotesLoading&&!q.length) return '<div class="empty">読み込み中…</div>';
+  let r = S.qsel ? q.find(x=>x['見積ID']===S.qsel) : null;
+  if(!r && !S.qsel) r = q.find(x=>['作成中','作成済'].includes(x['状態'])) || q[0];
+  if(!r) return `<div class="card"><div class="empty">${S.qsel?'読み込み中…':'見積がありません。「作る」から作れます。'}</div></div>`;
+  S.qsel=r['見積ID']; const st=r['状態']; const b=S.boot;
+  const items=(r.items&&r.items.length?r.items:[{name:r['件名'],qty:1,unit:r['税抜']||null}]);
+  const canPdf=items.length&&!items.some(i=>i.unit==null);
+  const isDraft=st==='作成中'||S.qedit===r['見積ID'];
+  const hasMail=!!r['送付先メール'];
+  const stage = ['受注','失注'].includes(st) ? 3 : (st==='送付済' ? 2 : (st==='作成済' ? 1 : 0));
+  let primary='';
+  if(stage===0) primary = canPdf ? `<button class="btn pri big wide" id="qmkpdf">PDFを作って下書きへ</button>` : `<div class="note">金額が入っていない品目があります。下の欄で単価を入れて保存してください。</div>`;
+  else if(stage===1) primary = hasMail&&r['下書きURL'] ? `<button class="btn pri big wide" id="qopensend">送る前に確認して送信</button>` : `<button class="btn pri big wide" id="qmarksent">送った → 送付済にする</button>`;
+  else if(stage===2) primary = `<button class="btn pri big wide" id="qtoinv">受注した → この内容で請求書を作る</button>`;
+  else primary = r['請求ID'] ? `<button class="btn pri big wide" id="qgoinv">請求書 ${esc(r['請求ID'])} を開く</button>` : '';
+  const stepLbl=['作成','送付','受注'];
+  const steps=`<div class="steps">${stepLbl.map((l,i)=>`<div class="stp ${i<stage?'done':i===stage?'now':''}"><span class="dot">${i<stage?'✓':i+1}</span><span>${l}</span></div>`).join('<div class="ln"></div>')}</div>`;
+  const nextHint=['内容を確認してPDFを作ります','メールで相手に送ります（送付先が無ければPDFを保存して渡してください）','返事が来たら「受注」か「失注」にします',st==='失注'?'失注として記録しています':'受注済み。請求書につながっています'][stage];
+  const secondary=[
+    stage!==0&&canPdf?`<button class="btn" id="qmkpdf">PDFを作り直す</button>`:'',
+    r['PDF']?`<a class="btn" href="${esc(driveDl(r['PDF']))}" download>PDFを保存</a><a class="btn" href="${esc(String(r['PDF']).split('\n')[0])}" target="_blank" rel="noopener">PDFを開く</a>`:'',
+    r['下書きURL']?`<a class="btn" href="${esc(r['下書きURL'])}" target="_blank" rel="noopener">Gmail下書きを開く</a>`:'',
+    st==='作成済'&&hasMail?`<button class="btn" id="qmarksent">送った → 送付済にする</button>`:'',
+    stage!==2&&stage!==3&&r['PDF']?`<button class="btn" id="qtoinv">この内容で請求書を作る</button>`:'',
+    st==='送付済'?`<button class="btn" id="qlost">失注にする</button>`:'',
+    isDraft?'':`<button class="btn" id="qediton">内容を直す</button>`,
+  ].filter(Boolean).join('');
+  const form = !isDraft ? '' : `<div class="card"><h2>内容を確認して直す</h2>
+    <form id="qeditform" onsubmit="return false">
+      <div class="fl"><b>どの会社から出す見積か</b>${segEntity('qeentity',r['法人'])}</div>
+      <div class="split"><div>
+        <label class="fl">宛名<input name="to" class="sel" list="qclients2" value="${esc(r['取引先']||'')}" autocomplete="off"></label><datalist id="qclients2">${[...new Set(b.clients.map(c=>c['正式社名']))].filter(Boolean).map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+        <label class="fl">件名<input name="subject" class="sel" value="${esc(r['件名']||'')}"></label>
+        <label class="fl">送付先メール<input name="mail" class="sel" value="${esc(r['送付先メール']||'')}"></label>
+        <div class="split"><label class="fl">送付方法<select name="via" class="sel"><option ${r['送付経路']==='メール'?'selected':''}>メール</option><option ${r['送付経路']==='LINE'?'selected':''}>LINE</option></select></label>
+        <label class="fl">担当<input name="staff" class="sel" value="${esc(r['担当']||'')}"></label></div>
+      </div><div>
+        <div class="fl" style="display:block"><b>品目（単価は税抜）</b></div>
+        <div id="qeitems">${items.map((i,n)=>itemRowEdit(i,n+1)).join('')}</div>
+        <button type="button" class="btn sm" id="qeadditem" style="margin-bottom:12px">＋ 品目を追加</button>
+        <div class="split"><label class="fl">見積日<input name="date" class="sel" type="date" value="${ymd(r['見積日'])}"></label><label class="fl">有効期限<input name="valid" class="sel" type="date" value="${ymd(r['有効期限'])}"></label></div>
+        <label class="fl">備考<textarea name="note" class="sel" style="height:70px">${esc(r['備考']||'')}</textarea></label>
+      </div></div>
+      <div class="tools" style="margin-top:8px"><button class="btn pri" id="qesave">この内容で保存</button><span style="font-size:12px;color:var(--mute)">保存すると下の見積書に反映されます。PDFは作り直してください</span></div>
+    </form></div>`;
+  return `<select id="qsel" class="sel wide">${q.map(x=>`<option value="${esc(x['見積ID'])}" ${x['見積ID']===r['見積ID']?'selected':''}>${esc(x['取引先'])}　${yen(x['税込'])}　${esc(x['状態'])}　${esc(x['見積ID'])}</option>`).join('')}</select>
+  <div class="card head">
+    <div class="hrow"><div class="hname">${esc(r['取引先'])}${/御中|様$/.test(String(r['取引先']))?'':' 様'}</div><div class="hamt">${yen(r['税込'])}</div></div>
+    <div class="hsub">${esc(r['見積ID'])}　${pill(st)}　見積日 ${ymd(r['見積日'])||'—'}　有効期限 ${ymd(r['有効期限'])||'—'}</div>
+    ${steps}
+    <div class="hnext"><div class="hint" style="margin-bottom:6px">次にやること　${nextHint}</div>${primary}
+      <div class="hint" style="margin-top:8px">試しに作っただけなら <button class="btn sm danger" id="qdel">この見積を削除</button>（DriveのPDFとGmail下書きも一緒に消えます）</div></div>
+    ${secondary?`<details class="more"><summary>その他の操作</summary><div class="tools">${secondary}</div></details>`:''}
+  </div>
+  <div id="sendbox"></div>
+  ${form}
+  <div class="paperwrap"><iframe class="paper" id="paperframe" sandbox="allow-same-origin"></iframe></div>`;
+}
+async function loadQuotePaper(){
+  const f=document.getElementById('paperframe'); if(!f||!S.qsel) return;
+  try{ const html=await call('api_quoteHtml',S.qsel); f.srcdoc=html; fitPaper(); }catch(e){ f.srcdoc=`<p style="font-family:sans-serif;padding:20px">${esc(e.message||e)}</p>`; }
+}
+function bindQuote(){
+  const qs=document.getElementById('qsubmit'); if(qs) qs.onclick=submitQuote;
+  const qa=document.getElementById('qadditem'); if(qa) qa.onclick=()=>{ const box=document.getElementById('qitemrows'); box.insertAdjacentHTML('beforeend',itemRow(box.querySelectorAll('.irow').length+1)); };
+  const sel=document.getElementById('qsel'); if(sel) sel.onchange=()=>{ S.qsel=sel.value; S.qedit=null; render(); };
+  const eo=document.getElementById('qediton'); if(eo) eo.onclick=()=>{ S.qedit=S.qsel; render(); };
+  const ea=document.getElementById('qeadditem'); if(ea) ea.onclick=()=>{ const box=document.getElementById('qeitems'); box.insertAdjacentHTML('beforeend', itemRowEdit({},box.querySelectorAll('.irow2').length+1)); };
+  const es=document.getElementById('qesave'); if(es) es.onclick=async()=>{
+    const f=document.getElementById('qeditform'); const g=n=>(f.elements[n]||{}).value||'';
+    const cnt=f.querySelectorAll('.irow2').length; const items=[];
+    for(let n=1;n<=cnt;n++){ if(g('ename'+n)) items.push({name:g('ename'+n),qty:Number(g('eqty'+n)||1),unit:g('eunit'+n)===''?null:Number(g('eunit'+n))}); }
+    busy(true);
+    try{ await call('api_updateQuote',S.qsel,{entityId:segVal('qeentity'),to:g('to'),subject:g('subject'),mail:g('mail'),via:g('via'),staff:g('staff'),date:g('date'),valid:g('valid'),note:g('note'),items}); S.qedit=null; S.quotes=null; toast('保存しました'); render(); }
+    catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
+  const mk=document.getElementById('qmkpdf'); if(mk) mk.onclick=async()=>{
+    showWorking('PDFを作っています', 'PDFを作ってDriveに保存し、Gmailの下書きを用意します。10秒ほどです。', true);
+    try{ const r=await call('api_makeQuotePdfAndDraft',S.qsel); hideWorking(); toast(r.folder?`Driveに保存しました：${r.folder}`:'PDFを作りました'); S.qshowSend=S.qsel; S.quotes=null; render(); }
+    catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); } };
+  if(S.qshowSend===S.qsel && document.getElementById('sendbox') && !document.getElementById('sendcard') && S.quotes) showSendCard('quote');
+  const os=document.getElementById('qopensend'); if(os) os.onclick=()=>{ S.qshowSend=S.qsel; showSendCard('quote'); os.scrollIntoView({behavior:'smooth',block:'start'}); };
+  const ms=document.getElementById('qmarksent'); if(ms) ms.onclick=async()=>{ await call('api_setQuoteStatus',S.qsel,'送付済'); S.quotes=null; toast('送付済にしました'); render(); };
+  const ql=document.getElementById('qlost'); if(ql) ql.onclick=async()=>{ if(!confirm('失注として記録します。よろしいですか？')) return; await call('api_setQuoteStatus',S.qsel,'失注'); S.quotes=null; toast('失注にしました'); render(); };
+  const ti=document.getElementById('qtoinv'); if(ti) ti.onclick=async()=>{
+    if(!confirm('この見積の内容で請求書（確認待ち）を作ります。よろしいですか？')) return;
+    showWorking('請求書を作っています','',true);
+    try{ const r=await call('api_quoteToInvoice',S.qsel,{}); hideWorking(); toast(r.existed?'この見積の請求書はもうあります':'請求書を作りました: '+r.id); S.sel=r.id; S.view='bill'; S.sub.bill='invoice'; await refresh(); }
+    catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); } };
+  const gi=document.getElementById('qgoinv'); if(gi) gi.onclick=()=>{ const cur=(S.quotes||[]).find(x=>x['見積ID']===S.qsel)||{}; S.sel=cur['請求ID']; S.view='bill'; S.sub.bill='invoice'; render(); };
+  const dl=document.getElementById('qdel'); if(dl) dl.onclick=async()=>{
+    const cur=(S.quotes||[]).find(x=>x['見積ID']===S.qsel)||{};
+    if(!confirm(`見積 ${cur['見積ID']||S.qsel}（${cur['取引先']||''} / ${yen(cur['税込'])}）を削除します。\nDriveのPDFとGmailの下書きも一緒に消えます。元に戻せません。\n\n削除しますか？`)) return;
+    showWorking('削除しています','台帳・Drive・Gmail下書きを片付けています。',true);
+    try{ const r=await call('api_deleteQuote',S.qsel); hideWorking(); toast(`削除しました（PDF ${r.files}件${r.draft?'・下書き1件':''}）`); S.qsel=null; S.quotes=null; S.sub.quote='qlist'; render(); }
+    catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); } };
+  if(S.view==='quote' && subOf('quote')==='qview' && S.qsel) loadQuotePaper();
+}
 function vDun(){
   const a=S.ar.filter(r=>isUnpaid(r)&&daysLate(r)>0).sort((x,y)=>daysLate(y)-daysLate(x));
   if(!a.length) return '<div class="empty">期日を過ぎた入金待ちはありません</div>';
@@ -788,7 +940,7 @@ function shrinkImage(file, max){
     fr.readAsDataURL(file);
   });
 }
-const TITLES={bill:'請求する',pay:'支払う'};
+const TITLES={bill:'請求する',pay:'支払う',quote:'見積もる'};
 function bindSegs(){
   document.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('button').forEach(b=>b.onclick=()=>{
     g.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
@@ -810,13 +962,13 @@ function renderInner(){
   else if(S.view==='settings') body=vSettings();
   else {
     const sb=subOf(S.view);
-    const inner = ({new:vNew,ar:vAr,invoice:vInvoice,dun:vDun,ap:vAp,expense:vExpense,line:vLine})[sb];
+    const inner = ({new:vNew,ar:vAr,invoice:vInvoice,dun:vDun,ap:vAp,expense:vExpense,line:vLine,qnew:vQNew,qlist:vQList,qview:vQView})[sb];
     body=`<h1>${TITLES[S.view]||''}${SUBS[S.view]?`<span style="font-weight:400;color:var(--mute);font-size:14px">　${(SUBS[S.view].find(x=>x[0]===subOf(S.view))||[])[1]||''}</span>`:''}</h1>${inner?inner():''}`;
   }
   m.innerHTML=body;
 
   m.querySelectorAll('.subnav button').forEach(b=>b.onclick=()=>{stopMic();S.sub[S.view]=b.dataset.s;render();});
-  m.querySelectorAll('tr.row').forEach(tr=>tr.onclick=ev=>{ if(ev.target.closest('select,a,button')) return; S.sel=tr.dataset.id; if(tr.dataset.v){S.view=tr.dataset.v; if(tr.dataset.s) S.sub[tr.dataset.v]=tr.dataset.s;} render(); });
+  m.querySelectorAll('tr.row').forEach(tr=>tr.onclick=ev=>{ if(ev.target.closest('select,a,button')) return; if(tr.dataset.q){ S.qsel=tr.dataset.id; S.qedit=null; } else S.sel=tr.dataset.id; if(tr.dataset.v){S.view=tr.dataset.v; if(tr.dataset.s) S.sub[tr.dataset.v]=tr.dataset.s;} render(); });
   m.querySelectorAll('.stsel').forEach(s=>s.onchange=async()=>{ try{ await call('api_setStatus',s.dataset.sheet,s.dataset.col,s.dataset.id,s.value); toast('更新しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } });
   m.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{S.filter=b.dataset.f;render();});
   bindSegs();
@@ -962,6 +1114,7 @@ function renderInner(){
   const tr=document.getElementById('treereload'); if(tr) tr.onclick=async()=>{ S.tree=null; render(); try{ S.tree=await call('api_driveTree'); }catch(e){ toast('失敗: '+(e.message||e)); } render(); };
   if(S.view==='docs' && !S.tree) call('api_driveTree').then(t=>{ S.tree=t; if(S.view==='docs') render(); }).catch(()=>{});
   if(S.view==='bill' && subOf('bill')==='invoice') loadPaper();
+  bindQuote();
 }
 load();
 </script></body></html>
