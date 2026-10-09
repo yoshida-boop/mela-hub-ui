@@ -210,7 +210,7 @@ const S = { view:'home', sub:{}, boot:null, ar:[], ap:[], line:[], expenses:[], 
 })();
 const subOf = v => S.sub[v] || (SUBS[v] ? SUBS[v][0][0] : null);
 
-const BUILD='2026-10-09b';
+const BUILD='2026-10-09c';
 (async()=>{ try{ const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text(); const m=t.match(/const BUILD='([^']+)'/); if(m&&m[1]!==BUILD){ location.reload(); } }catch(e){} })();
 const yen = n => n==null||n===''||isNaN(n) ? '—' : '¥'+Math.round(Number(n)).toLocaleString('ja-JP');
 const pill = s => `<span class="pill ${PILL[s]||'p-grey'}">${s||'—'}</span>`;
@@ -881,11 +881,20 @@ function vAp(){
 }
 function vExpense(){
   const a=S.expenses;
-  return `<p class="sub">立て替えたお金と、カードの利用です。「請求先」が決まると、次にその取引先へ請求するときに拾えます。</p>
+  const open=a.filter(r=>r['状態']==='未請求' && r['請求先'] && !['未割当','経費'].includes(r['請求先']));
+  const by={}; open.forEach(r=>{ (by[r['請求先']]=by[r['請求先']]||[]).push(r); });
+  const clients=[...new Set((S.boot.clients||[]).map(c=>c['正式社名']).concat(S.ar.map(r=>r['取引先'])))].filter(Boolean);
+  const sum=rs=>rs.reduce((t,r)=>t+(Number(r['税込金額'])||0),0);
+  const groups=Object.keys(by).sort().map(c=>`<div class="krow"><div class="kmain"><div class="kname">${esc(c)}</div><div class="ksub">${by[c].map(r=>esc(r['品目'])+'　'+yen(r['税込金額'])).join('　／　')}</div></div>
+      <div class="kact"><button class="btn pri sm exbill" data-c="${esc(c)}">${esc(c)}への請求書を作る（${by[c].length}件 ${yen(sum(by[c]))}）</button></div></div>`).join('');
+  return `<p class="sub">立て替えたお金と、カードの利用です。請求先が決まっている未請求の立替は、下のボタンでそのまま請求書（消費税対象外）になります。</p>
+  ${groups?`<div class="card"><h2>請求できる立替<small>請求先ごとにまとめて1枚にします。作ったあと「確認・送付」で内容を直せます</small></h2><div class="klist">${groups}</div></div>`:''}
   <div class="card" style="padding:0"><div class="tw"><table><tr><th>立替ID</th><th>発生日</th><th>支払先</th><th>品目</th><th class="r">税込</th><th>請求先</th><th>状態</th><th>証憑</th></tr>
-  ${a.map(r=>`<tr><td style="font-family:monospace;font-size:12px">${esc(r['立替ID'])}</td><td>${esc(r['発生日'])}</td><td>${esc(r['支払先'])}</td><td>${esc(r['品目'])}</td><td class="r">${yen(r['税込金額'])}</td>
-   <td>${r['請求先']==='未割当'?`<span class="pill p-warn">未割当</span>`:esc(r['請求先'])}</td><td>${pill(r['状態'])}</td>
-   <td>${r['証憑']?`<a href="${esc(r['証憑'])}" target="_blank">開く</a>`:''}</td></tr>`).join('')||'<tr><td colspan="8" class="empty">まだありません。カードの利用通知メールをinvoice@に送ると自動で入ります</td></tr>'}</table></div></div>`;
+  ${a.map(r=>`<tr><td style="font-family:monospace;font-size:12px">${esc(r['立替ID'])}</td><td>${esc(ymd(r['発生日']))}</td><td>${esc(r['支払先'])}</td><td>${esc(r['品目'])}</td><td class="r">${yen(r['税込金額'])}</td>
+   <td>${r['状態']==='未請求'?`<input class="sel exfill" list="exclients" data-id="${esc(r['立替ID'])}" value="${r['請求先']==='未割当'?'':esc(r['請求先'])}" placeholder="請求先を入れる" style="min-width:140px;padding:3px 7px;font-size:12px">`:esc(r['請求先'])}</td>
+   <td>${pill(r['状態'])}${r['請求ID']?`<div style="font-size:11px;color:var(--mute)">→ ${esc(r['請求ID'])}</div>`:''}</td>
+   <td>${r['証憑']?`<a href="${esc(r['証憑'])}" target="_blank">開く</a>`:''}</td></tr>`).join('')||'<tr><td colspan="8" class="empty">まだありません。カードの利用通知メールをinvoice@に送ると自動で入ります</td></tr>'}</table></div></div>
+  <datalist id="exclients">${clients.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>`;
 }
 function vLine(){
   return `<p class="sub">LINE「mela 請求受付」に届いたもの。話した内容はここから請求の下書きになります。</p>
@@ -1108,6 +1117,14 @@ function renderInner(){
     try{ await navigator.clipboard.writeText(t.value); toast('コピーしました'); }
     catch(e){ t.select(); document.execCommand('copy'); toast('コピーしました'); } };
   m.querySelectorAll('.savepdf').forEach(b=>b.onclick=()=>savePdf(b.dataset.url, b.textContent+'の準備中'));
+  m.querySelectorAll('.exbill').forEach(b=>b.onclick=async()=>{
+    if(!confirm(`${b.dataset.c} への請求書（確認待ち）を作ります。よろしいですか？`)) return;
+    showWorking('請求書を作っています','',true);
+    try{ const r=await call('api_billExpenses',b.dataset.c,null,{}); hideWorking(); toast(`請求書を作りました: ${r.id}（${r.count}件 ${yen(r.total)}）`); S.sel=r.id; S.view='bill'; S.sub.bill='invoice'; await refresh(); }
+    catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); } });
+  m.querySelectorAll('.exfill').forEach(inp=>inp.onchange=async()=>{ const v=inp.value.trim(); inp.disabled=true;
+    try{ await call('api_patchRow','立替台帳','立替ID',inp.dataset.id,{'請求先':v||'未割当'}); toast('請求先を入れました'); await refresh(); }
+    catch(e){ toast('失敗: '+(e.message||e)); inp.disabled=false; } });
   const rc2=document.getElementById('resclose'); if(rc2) rc2.onclick=()=>{ S.result=null; render(); };
   const mr=document.getElementById('mkrcpt'); if(mr) mr.onclick=async()=>{
     showWorking('領収書を作っています', 'PDFを作ってDriveに保存し、送付先があればGmailの下書きも用意します。10秒ほどです。', true);
