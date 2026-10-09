@@ -525,18 +525,18 @@ function vInvoice(){
   const hasMail = !!inv['送付先メール'];
   let primary = '';
   if(stage===0) primary = canPdf
-      ? `<button class="btn pri big wide" id="mkpdf">PDFを作って下書きへ</button>`
+      ? `<button class="btn pri big wide" id="mkpdf">請求書を作る</button><div class="hint" style="margin-top:6px">PDFができてDriveに保存され、メールの下書きまで用意されます</div>`
       : `<div class="note">金額が入っていない品目があります。下の欄で単価を入れて保存すると、PDFを作れます。</div>`;
   else if(stage===1) primary = hasMail && inv['下書きURL']
       ? `<button class="btn pri big wide" id="opensend">送る前に確認して送信</button>`
       : `<button class="btn pri big wide" id="lineinv">LINEで送る</button>`;
   else if(stage===2) primary = `<button class="btn pri big wide" id="markpaid">入金を確認した → 入金済にする</button>`;
-  else primary = rcptDone ? '' : `<button class="btn pri big wide" id="mkrcpt">領収書を作って下書きへ</button>`;
+  else primary = rcptDone ? '' : `<button class="btn pri big wide" id="mkrcpt">領収書を作る</button>`;
   const stepLbl = ['作成','送付','入金','領収書'];
   const steps = `<div class="steps">${stepLbl.map((l,i)=>`<div class="stp ${i<stage?'done':i===stage?'now':''}"><span class="dot">${i<stage?'✓':i+1}</span><span>${l}</span></div>`).join('<div class="ln"></div>')}</div>`;
-  const nextHint = ['内容を確認してPDFを作ります','メールかLINEで相手に送ります','入金があったら「入金済」にします','入金済です。必要なら領収書を出せます'][stage];
+  const nextHint = ['内容を確認して請求書を作ります','メールかLINEで相手に送ります','入金があったら「入金済」にします','入金済です。必要なら領収書を出せます'][stage];
   const secondary = [
-    stage!==0 && canPdf ? `<button class="btn" id="mkpdf">PDFを作り直す</button>` : '',
+    stage!==0 && canPdf ? `<button class="btn" id="mkpdf">請求書を作り直す</button>` : '',
     inv['PDF'] ? `<a class="btn" href="${esc(driveDl(inv['PDF']))}" download>PDFを保存</a><a class="btn" href="${esc(String(inv['PDF']).split('\n')[0])}" target="_blank" rel="noopener">PDFを開く</a>` : '',
     inv['下書きURL'] && !(stage===1 && hasMail) ? `<a class="btn" href="${esc(inv['下書きURL'])}" target="_blank" rel="noopener">Gmail下書きを開く</a>` : '',
     stage===1 && hasMail && inv['下書きURL'] ? `<button class="btn" id="lineinv">LINEで送る</button>` : (stage!==1 && Number(inv['税込']) ? `<button class="btn" id="lineinv">LINEで送る</button>` : ''),
@@ -556,11 +556,34 @@ function vInvoice(){
     <details class="more"><summary>その他の操作</summary><div class="tools">${secondary}</div></details>
   </div>
    <div id="sendbox"></div>
-   <div id="linebox"></div>
+   <div id="linebox">${resultCard()}</div>
   ${memo?`<details class="more memo"><summary>読み取りメモ・履歴</summary><div class="note">${esc(memo)}</div></details>`:''}
   ${form}
   ${!inv.items||!inv.items.length?`<div class="note">過去にinvoyで出した分の取り込みなので品目データがありません。PDFはDriveの保存分を開いてください。</div>`:''}
   <div class="paperwrap"><iframe class="paper" id="paperframe" sandbox="allow-same-origin"></iframe></div>`;
+}
+// LINE送付・領収書の結果。refresh() で画面が描き直されても残るように S.result に持つ
+function resultCard(){
+  const r=S.result; if(!r || r.id!==S.sel) return '';
+  if(r.type==='line') return `<div class="card"><h2>LINEで送る<small>${r.kind==='receipt'?'領収書':'請求書'}</small></h2>
+      <div class="note" style="margin-bottom:10px">PDFを「リンクを知っている人が見られる」状態にしました。リンクを知らない人は開けません。</div>
+      <textarea class="mail" id="linetext" style="height:190px">${esc(r.text)}</textarea>
+      <div class="tools" style="margin-top:10px">
+        <a class="btn pri" href="${esc(r.share)}" target="_blank" rel="noopener">LINEを開いて送る</a>
+        <button class="btn" id="linecopy">文面をコピー</button>
+        <a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">PDFを開く</a>
+        <a class="btn" href="${esc(driveDl(r.url))}" download>PDFを保存</a>
+        <button class="btn" id="resclose">閉じる</button>
+      </div></div>`;
+  if(r.type==='receipt') return `<div class="card"><h2>領収書ができました<small>${r.folder?'Driveに保存済み：'+esc(r.folder):''}</small></h2>
+      <div class="hint" style="margin-bottom:10px">${r.draft?'Gmailに下書きも作りました。送る内容を確認して送信してください。':'送付先メールが登録されていないため、下書きは作っていません。PDFを保存して渡すか、LINEで送ってください。'}</div>
+      <div class="tools">
+        ${r.draft?`<a class="btn pri" href="${esc(r.draft)}" target="_blank" rel="noopener">Gmailの下書きを開く</a>`:''}
+        ${r.pdf?`<a class="btn ${r.draft?'':'pri'}" href="${esc(r.pdf)}" target="_blank" rel="noopener">領収書を開く</a><a class="btn" href="${esc(driveDl(r.pdf))}" download>領収書を保存</a>`:''}
+        <button class="btn" id="linercpt">LINEで送る</button>
+        <button class="btn" id="resclose">閉じる</button>
+      </div></div>`;
+  return '';
 }
 async function showSendCard(kind){
   const isQ = kind==='quote';
@@ -658,15 +681,15 @@ function vQView(){
   const hasMail=!!r['送付先メール'];
   const stage = ['受注','失注'].includes(st) ? 3 : (st==='送付済' ? 2 : (st==='作成済' ? 1 : 0));
   let primary='';
-  if(stage===0) primary = canPdf ? `<button class="btn pri big wide" id="qmkpdf">PDFを作って下書きへ</button>` : `<div class="note">金額が入っていない品目があります。下の欄で単価を入れて保存してください。</div>`;
+  if(stage===0) primary = canPdf ? `<button class="btn pri big wide" id="qmkpdf">見積書を作る</button><div class="hint" style="margin-top:6px">PDFができてDriveに保存され、メールの下書きまで用意されます</div>` : `<div class="note">金額が入っていない品目があります。下の欄で単価を入れて保存してください。</div>`;
   else if(stage===1) primary = hasMail&&r['下書きURL'] ? `<button class="btn pri big wide" id="qopensend">送る前に確認して送信</button>` : `<button class="btn pri big wide" id="qmarksent">送った → 送付済にする</button>`;
   else if(stage===2) primary = `<button class="btn pri big wide" id="qtoinv">受注した → この内容で請求書を作る</button>`;
   else primary = r['請求ID'] ? `<button class="btn pri big wide" id="qgoinv">請求書 ${esc(r['請求ID'])} を開く</button>` : '';
   const stepLbl=['作成','送付','受注'];
   const steps=`<div class="steps">${stepLbl.map((l,i)=>`<div class="stp ${i<stage?'done':i===stage?'now':''}"><span class="dot">${i<stage?'✓':i+1}</span><span>${l}</span></div>`).join('<div class="ln"></div>')}</div>`;
-  const nextHint=['内容を確認してPDFを作ります','メールで相手に送ります（送付先が無ければPDFを保存して渡してください）','返事が来たら「受注」か「失注」にします',st==='失注'?'失注として記録しています':'受注済み。請求書につながっています'][stage];
+  const nextHint=['内容を確認して見積書を作ります','メールで相手に送ります（送付先が無ければPDFを保存して渡してください）','返事が来たら「受注」か「失注」にします',st==='失注'?'失注として記録しています':'受注済み。請求書につながっています'][stage];
   const secondary=[
-    stage!==0&&canPdf?`<button class="btn" id="qmkpdf">PDFを作り直す</button>`:'',
+    stage!==0&&canPdf?`<button class="btn" id="qmkpdf">見積書を作り直す</button>`:'',
     r['PDF']?`<a class="btn" href="${esc(driveDl(r['PDF']))}" download>PDFを保存</a><a class="btn" href="${esc(String(r['PDF']).split('\n')[0])}" target="_blank" rel="noopener">PDFを開く</a>`:'',
     r['下書きURL']?`<a class="btn" href="${esc(r['下書きURL'])}" target="_blank" rel="noopener">Gmail下書きを開く</a>`:'',
     st==='作成済'&&hasMail?`<button class="btn" id="qmarksent">送った → 送付済にする</button>`:'',
@@ -723,7 +746,7 @@ function bindQuote(){
     try{ await call('api_updateQuote',S.qsel,{entityId:segVal('qeentity'),to:g('to'),subject:g('subject'),mail:g('mail'),via:g('via'),staff:g('staff'),date:g('date'),valid:g('valid'),note:g('note'),items}); S.qedit=null; S.quotes=null; toast('保存しました'); render(); }
     catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
   const mk=document.getElementById('qmkpdf'); if(mk) mk.onclick=async()=>{
-    showWorking('PDFを作っています', 'PDFを作ってDriveに保存し、Gmailの下書きを用意します。10秒ほどです。', true);
+    showWorking('見積書を作っています', 'PDFを作ってDriveに保存し、Gmailの下書きを用意します。10秒ほどです。', true);
     try{ const r=await call('api_makeQuotePdfAndDraft',S.qsel); hideWorking(); toast(r.folder?`Driveに保存しました：${r.folder}`:'PDFを作りました'); S.qshowSend=S.qsel; S.quotes=null; render(); }
     catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); } };
   if(S.qshowSend===S.qsel && document.getElementById('sendbox') && !document.getElementById('sendcard') && S.quotes) showSendCard('quote');
@@ -1057,41 +1080,30 @@ function renderInner(){
     busy(true);
     try{ if(a) await call('api_setSecret','ANTHROPIC_API_KEY',a); if(gg) await call('api_setSecret','GEMINI_API_KEY',gg);
       toast('保存しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } finally{ busy(false); } };
-  const lb=document.getElementById('lineinv'); if(lb) lb.onclick=async()=>{
-    const box=document.getElementById('linebox');
-    box.innerHTML=`<div class="card"><div class="empty">リンクを作っています…</div></div>`;
-    busy(true);
+  const lineGo=async(kind)=>{
+    showWorking('LINE用のリンクを作っています', kind==='receipt'?'領収書のPDFを共有できる状態にしています。10秒ほどです。':'請求書のPDFを共有できる状態にしています。10秒ほどです。', true);
     try{
-      const cur=S.ar.find(r=>r['請求ID']===S.sel)||{};
-      const kind = cur['状態']==='入金済' ? 'receipt' : 'invoice';
       const r=await call('api_shareForLine',S.sel,kind);
-      box.innerHTML=`<div class="card"><h2>LINEで送る<small>${kind==='receipt'?'領収書':'請求書'}</small></h2>
-        <div class="note" style="margin-bottom:10px">PDFを「リンクを知っている人が見られる」状態にしました。リンクを知らない人は開けません。</div>
-        <textarea class="mail" id="linetext" style="height:190px">${esc(r.text)}</textarea>
-        <div class="tools" style="margin-top:10px">
-          <a class="btn pri" href="${esc(r.share)}" target="_blank" rel="noopener">LINEを開いて送る</a>
-          <button class="btn" id="linecopy">文面をコピー</button>
-          <a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">PDFを開く</a>
-          <a class="btn" href="${esc(driveDl(r.url))}" download>PDFを保存</a>
-        </div></div>`;
-      const cp=document.getElementById('linecopy');
-      cp.onclick=async()=>{ const t=document.getElementById('linetext');
-        try{ await navigator.clipboard.writeText(t.value); toast('コピーしました'); }
-        catch(e){ t.select(); document.execCommand('copy'); toast('コピーしました'); } };
-      await refresh();
-    }catch(e){ box.innerHTML=`<div class="card"><div class="note">失敗: ${esc(e.message||e)}</div></div>`; }
-    finally{ busy(false); } };
+      S.result={type:'line', id:S.sel, kind, text:r.text, share:r.share, url:r.url};
+      hideWorking(); await refresh();
+      const box=document.getElementById('linebox'); if(box) box.scrollIntoView({behavior:'smooth',block:'start'});
+    }catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); } };
+  const lb=document.getElementById('lineinv'); if(lb) lb.onclick=()=>{ const cur=S.ar.find(r=>r['請求ID']===S.sel)||{}; lineGo(cur['状態']==='入金済' ? 'receipt' : 'invoice'); };
+  const lr=document.getElementById('linercpt'); if(lr) lr.onclick=()=>lineGo('receipt');
+  const cp=document.getElementById('linecopy'); if(cp) cp.onclick=async()=>{ const t=document.getElementById('linetext');
+    try{ await navigator.clipboard.writeText(t.value); toast('コピーしました'); }
+    catch(e){ t.select(); document.execCommand('copy'); toast('コピーしました'); } };
+  const rc2=document.getElementById('resclose'); if(rc2) rc2.onclick=()=>{ S.result=null; render(); };
   const mr=document.getElementById('mkrcpt'); if(mr) mr.onclick=async()=>{
-    const lbl=mr.textContent; busy(true); mr.disabled=true; mr.textContent='領収書を作っています…';
+    showWorking('領収書を作っています', 'PDFを作ってDriveに保存し、送付先があればGmailの下書きも用意します。10秒ほどです。', true);
     try{
       const r=await call('api_makeReceipt',S.sel,{});
-      toast(r.draft?'領収書とGmailの下書きを作りました':'領収書を作りました（送付先メール未登録のため下書きなし）');
-      if(r.draft) window.open(r.draft,'_blank'); else if(r.pdf) window.open(r.pdf,'_blank');
-      await refresh();
-    }catch(e){ toast('失敗: '+(e.message||e)); }
-    finally{ busy(false); mr.disabled=false; mr.textContent=lbl; } };
+      S.result={type:'receipt', id:S.sel, pdf:r.pdf||'', draft:r.draft||'', folder:r.folder||''};
+      hideWorking(); toast(r.draft?'領収書とGmailの下書きを作りました':'領収書を作りました'); await refresh();
+      const box=document.getElementById('linebox'); if(box) box.scrollIntoView({behavior:'smooth',block:'start'});
+    }catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); } };
   const mk=document.getElementById('mkpdf'); if(mk) mk.onclick=async()=>{
-    showWorking('PDFを作っています', 'PDFを作ってDriveに保存し、Gmailの下書きを用意します。10秒ほどです。', true);
+    showWorking('請求書を作っています', 'PDFを作ってDriveに保存し、Gmailの下書きを用意します。10秒ほどです。', true);
     try{ const r=await call('api_makePdfAndDraft',S.sel);
       hideWorking();
       toast(r.folder?`Driveに保存しました：${r.folder}`:'PDFを作りました');
