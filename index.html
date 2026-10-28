@@ -210,7 +210,7 @@ const S = { view:'home', sub:{}, boot:null, ar:[], ap:[], line:[], expenses:[], 
 })();
 const subOf = v => S.sub[v] || (SUBS[v] ? SUBS[v][0][0] : null);
 
-const BUILD='2026-10-09c';
+const BUILD='2026-10-28a';
 (async()=>{ try{ const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text(); const m=t.match(/const BUILD='([^']+)'/); if(m&&m[1]!==BUILD){ location.reload(); } }catch(e){} })();
 const yen = n => n==null||n===''||isNaN(n) ? '—' : '¥'+Math.round(Number(n)).toLocaleString('ja-JP');
 const pill = s => `<span class="pill ${PILL[s]||'p-grey'}">${s||'—'}</span>`;
@@ -459,6 +459,15 @@ const sumAr = rows => rows.reduce((s,r)=>s+(Number(r['税込'])||0),0);
 const driveId = u => { const m=String(u||'').match(/[-\w]{25,}/); return m?m[0]:''; };
 const driveDl = u => { const id=driveId(u); return id?`https://drive.google.com/uc?export=download&id=${id}`:''; };
 
+function approveCard(){
+  const w=S.ar.filter(r=>String(r['送付承認'])==='待ち');
+  if(!w.length) return '';
+  const sum=w.reduce((t,r)=>t+(Number(r['税込'])||0),0);
+  return `<div class="card" style="border-color:var(--acc)"><h2>送ってよい請求 ${w.length}件 <small>PDFと下書きはできています。内容を見て、まとめて送信してください（合計 ${yen(sum)}）</small></h2>
+    <div class="klist">${w.map(r=>`<div class="krow"><div class="kmain"><div class="kname">${esc(r['取引先'])}　${yen(r['税込'])}</div><div class="ksub">${esc(r['件名'])}　→ ${esc(r['送付先メール']||'')}　期日 ${ymd(r['支払期日'])}</div></div>
+      <div class="kact"><button class="btn sm apv1" data-id="${esc(r['請求ID'])}">これだけ送る</button><button class="btn sm apvskip" data-id="${esc(r['請求ID'])}">今回は送らない</button><a class="btn sm" href="${esc(String(r['PDF']||'').split('\n')[0])}" target="_blank" rel="noopener">PDFを見る</a></div></div>`).join('')}</div>
+    <div class="tools" style="margin-top:10px"><button class="btn pri big" id="apvall">${w.length}件をまとめて送信</button></div></div>`;
+}
 function vAr(){
   const today=S.boot.today, thisM=today.slice(0,7);
   const all=S.ar.filter(r=>r['状態']!=='取消');
@@ -490,7 +499,7 @@ function vAr(){
     <div style="padding:10px 14px;font-size:13px;color:var(--mute)">押すと中身を確認できます。PDFを作って下書きまで進めてください。</div>${arTable(making)}</div>`:'';
 
   return `<p class="sub">出した請求と、入金の予定。入る月ごとに分けています。入金を確認したら「入金済」に変えてください。</p>
-  ${head}${mk}${body}
+  ${approveCard()}${head}${mk}${body}
   <details class="card" style="padding:0"><summary class="mhead" style="cursor:pointer"><span>入金が終わったもの</span><span>${paid.length}件　<b>${yen(sumAr(paid))}</b></span></summary>${paidMonths(paid,'入金日','支払期日').map(([m,rs])=>`<div class="pm"><div class="pmhead"><span>${m==='不明'?'入金日が入っていないもの':`${m.slice(0,4)}年${Number(m.slice(5,7))}月に入ったもの`}</span><span>${rs.length}件　<b>${yen(sumAr(rs))}</b></span></div>${arTable(rs)}</div>`).join('')}</details>`;
 }
 
@@ -1125,6 +1134,10 @@ function renderInner(){
   m.querySelectorAll('.exfill').forEach(inp=>inp.onchange=async()=>{ const v=inp.value.trim(); inp.disabled=true;
     try{ await call('api_patchRow','立替台帳','立替ID',inp.dataset.id,{'請求先':v||'未割当'}); toast('請求先を入れました'); await refresh(); }
     catch(e){ toast('失敗: '+(e.message||e)); inp.disabled=false; } });
+  const apa=document.getElementById('apvall'); if(apa) apa.onclick=async()=>{ if(!confirm('承認待ちの請求をすべて invoice@ から送信します。よろしいですか？')) return; showWorking('送信しています','',true);
+    try{ const r=await call('api_sendApproved',null); hideWorking(); toast(`送信しました ${r.sent.length}件${r.failed.length?`（失敗 ${r.failed.length}件）`:''}`); await refresh(); }catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); } };
+  m.querySelectorAll('.apv1').forEach(b=>b.onclick=async()=>{ showWorking('送信しています','',true); try{ const r=await call('api_sendApproved',[b.dataset.id]); hideWorking(); toast(r.sent.length?'送信しました':'送れませんでした: '+(r.failed[0]&&r.failed[0].why)); await refresh(); }catch(e){ hideWorking(); toast('失敗: '+(e.message||e)); } });
+  m.querySelectorAll('.apvskip').forEach(b=>b.onclick=async()=>{ try{ await call('api_skipApproved',b.dataset.id); toast('保留にしました（保留を外すと次の送付日に候補に戻ります）'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } });
   const rc2=document.getElementById('resclose'); if(rc2) rc2.onclick=()=>{ S.result=null; render(); };
   const mr=document.getElementById('mkrcpt'); if(mr) mr.onclick=async()=>{
     showWorking('領収書を作っています', 'PDFを作ってDriveに保存し、送付先があればGmailの下書きも用意します。10秒ほどです。', true);
