@@ -74,6 +74,15 @@ details.more.memo{margin:10px 0}
 .etile{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0 4px}
 .etile>div{display:flex;flex-direction:column;gap:2px}.etile b{font-size:17px;font-variant-numeric:tabular-nums;line-height:1.2}.etile small{font-size:11px;color:var(--mute)}
 .tile.bad .etile b{color:var(--bad)}
+.quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.qb{display:block;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 14px;cursor:pointer;text-decoration:none;color:inherit}.qb:hover{border-color:var(--acc)}.qb b{display:block;font-size:15px}.qb small{color:var(--mute);font-size:12px}
+.ecard .ehead{display:flex;align-items:center;gap:10px;margin-bottom:10px}.ecard .en{font-weight:700}
+.gg{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:12px}
+.g .gl{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--mute);gap:8px}.g .gl b{font-size:16px;color:var(--fg);font-variant-numeric:tabular-nums}.g .gl small{font-size:12px;color:var(--mute);font-weight:400}
+.gbar{height:10px;background:rgba(0,0,0,.07);border-radius:6px;overflow:hidden;margin:6px 0 4px}.gbar div{height:100%;background:var(--ok);border-radius:6px}.g.out .gbar div{background:var(--acc)}
+.g .gs{font-size:12px;color:var(--mute)}.g .gs b{color:var(--fg);font-variant-numeric:tabular-nums}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.kpi{display:block;border:1px solid var(--line);border-radius:10px;padding:9px 11px;cursor:pointer;color:inherit;text-decoration:none}.kpi span{display:block;font-size:11.5px;color:var(--mute)}.kpi b{font-size:18px;font-variant-numeric:tabular-nums}.kpi small{display:block;font-size:12px;color:var(--ink2)}.kpi.bad b{color:var(--bad)}.kpi.warn b{color:var(--warn)}
 .esec{border-top:1px solid var(--line)}
 .kgrp{border-top:1px dashed var(--line)}
 .khead{display:flex;justify-content:space-between;padding:6px 15px 6px 28px;font-size:12px;color:var(--ink2);background:rgba(0,0,0,.008)}
@@ -189,11 +198,11 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbwXOKcewGxJTEUf2IfNTWgE
 let CODE = 'q3sqawj3';
 const _qs = new URLSearchParams(location.search);
 
-const VIEWS = [['home','ホーム'],['bill','請求する'],['quote','見積もる'],['pay','支払う'],['docs','書類'],['settings','設定']];
+const VIEWS = [['home','ホーム'],['bill','請求書'],['quote','見積書'],['pay','支払い'],['docs','書類'],['settings','設定']];
 const SUBS = {
-  bill: [['new','作る'],['ar','一覧'],['invoice','確認・送付'],['dun','催促']],
-  quote: [['qnew','作る'],['qlist','一覧'],['qview','確認・送付']],
-  pay:  [['ap','一覧'],['expense','立替・経費'],['line','LINE受信']],
+  bill: [['new','新しく作る'],['ar','一覧'],['invoice','確認して送る'],['dun','催促']],
+  quote: [['qnew','新しく作る'],['qlist','一覧'],['qview','確認して送る']],
+  pay:  [['ap','払うもの'],['expense','立替・経費'],['line','LINE受信']],
 };
 const LEGACY = {ar:['bill','ar'],invoice:['bill','invoice'],dun:['bill','dun'],new:['bill','new'],ap:['pay','ap'],line:['pay','line'],expense:['pay','expense']};
 const PILL = {'作成中':'p-warn','受注':'p-ok','失注':'p-grey','作成待ち':'p-grey','確認待ち':'p-warn','作成済':'p-info','送付済':'p-info','入金済':'p-ok','未入金':'p-warn','催促中':'p-bad','取消':'p-grey','支払予定':'p-info','支払済':'p-ok','未請求':'p-warn','請求済':'p-ok'};
@@ -210,7 +219,7 @@ const S = { view:'home', sub:{}, boot:null, ar:[], ap:[], line:[], expenses:[], 
 })();
 const subOf = v => S.sub[v] || (SUBS[v] ? SUBS[v][0][0] : null);
 
-const BUILD='2026-10-28a';
+const BUILD='2026-10-29a';
 (async()=>{ try{ const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text(); const m=t.match(/const BUILD='([^']+)'/); if(m&&m[1]!==BUILD){ location.reload(); } }catch(e){} })();
 const yen = n => n==null||n===''||isNaN(n) ? '—' : '¥'+Math.round(Number(n)).toLocaleString('ja-JP');
 const pill = s => `<span class="pill ${PILL[s]||'p-grey'}">${s||'—'}</span>`;
@@ -293,33 +302,47 @@ function closeDrawer(){ document.getElementById('side').classList.remove('open')
 document.getElementById('burger').onclick=()=>{ const o=document.getElementById('side').classList.contains('open'); o?closeDrawer():openDrawer(); };
 document.getElementById('backdrop').onclick=closeDrawer;
 
+function gauge(done,total,label,cls){
+  const p=total?Math.min(100,Math.round(done/total*100)):0;
+  return `<div class="g ${cls||''}"><div class="gl"><span>${label}</span><b>${yen(done)}<small> / ${yen(total)}</small></b></div><div class="gbar"><div style="width:${p}%"></div></div><div class="gs">残り <b>${yen(Math.max(0,total-done))}</b>${total?`　${p}%`:''}</div></div>`;
+}
 function vHome(){
-  const d=S.dash; if(!d) return '';
-  const fyStart={}; (S.boot.entities||[]).forEach(e=>{ const m=Number(e['期首月'])||8, dd=new Date(S.boot.today); const y=(dd.getMonth()+1)>=m?dd.getFullYear():dd.getFullYear()-1; fyStart[e['法人ID']]=`${y}-${String(m).padStart(2,'0')}`; });
-  const since = S.ar.filter(r=>String(r['請求日']||'') >= (fyStart[r['法人']]||'2026-08'));
-  const recv = S.ap.filter(r=>String(r['受領日']||'') >= '2026-08');
-  const todo=[];
-  S.ar.forEach(r=>{ if(isUnpaid(r)&&daysLate(r)>0) todo.push([r,'p-bad',`期日から${daysLate(r)}日過ぎています`,'bill','dun']);
-    else if(r['状態']==='確認待ち') todo.push([r,'p-warn',r['メモ']||'内容の確認が必要です','bill','invoice']);
-    else if(r['状態']==='作成済') todo.push([r,'p-info',r['下書きURL']?'Gmailに下書きがあります。送ったら「送付済」に':'PDFができています。送ったら「送付済」に','bill','invoice']); });
-  S.ap.forEach(r=>{ if(['確認待ち','支払予定'].includes(r['状態'])&&r['支払期日']&&r['支払期日']<d.today) todo.push([r,'p-bad','支払期日を過ぎています','pay','ap']); });
-  return `<h1>ホーム</h1><p class="sub">${d.today} 時点。台帳の実データです。</p>
-  <div class="tiles">
-   <div class="tile bad"><div class="l">入金の期日超過</div><div class="v">${yen(d.overdue.sum)}</div><div class="s">${d.overdue.n}件</div></div>
-   <div class="tile warn"><div class="l">入金待ち（期日内）</div><div class="v">${yen(d.unpaid.sum)}</div><div class="s">${d.unpaid.n}件</div></div>
-   <div class="tile ok"><div class="l">今月の入金</div><div class="v">${yen(d.paidM.sum)}</div><div class="s">${d.paidM.n}件</div></div>
-   <div class="tile"><div class="l">作成中の請求</div><div class="v">${yen(d.toMake.sum)}</div><div class="s">${d.toMake.n}件</div></div>
-   <div class="tile ${d.payOverdue.n?'bad':''}"><div class="l">こちらが払う予定</div><div class="v">${yen(d.payDue.sum)}</div><div class="s">${d.payDue.n}件${d.payOverdue.n?`　期日超過 ${d.payOverdue.n}件`:''}</div></div>
-   <div class="tile"><div class="l">今期に記録した書類</div><div class="v">${since.length+recv.length}</div><div class="s">出した ${since.length}件／受けた ${recv.length}件</div></div>
+  const today=S.boot.today, thisM=today.slice(0,7), mLabel=`${Number(thisM.slice(5,7))}月`;
+  const ents=(S.boot.entities||[]).filter(e=>['E01','E02'].includes(e['法人ID'])||S.ar.some(r=>r['法人']===e['法人ID'])||S.ap.some(r=>r['法人']===e['法人ID']));
+  const sumA=rs=>rs.reduce((t,r)=>t+(Number(r['税込'])||0),0), sumP=rs=>rs.reduce((t,r)=>t+(Number(r['税込金額'])||0),0);
+  const cards=ents.map(e=>{
+    const id=e['法人ID'];
+    const arM=S.ar.filter(r=>r['法人']===id&&ymd(r['支払期日']).slice(0,7)===thisM&&['送付済','未入金','催促中','入金済'].includes(r['状態']));
+    const arIn=arM.filter(r=>r['状態']==='入金済');
+    const apM=S.ap.filter(r=>r['法人']===id&&ymd(r['支払期日']).slice(0,7)===thisM&&['支払予定','確認待ち','支払済'].includes(r['状態']));
+    const apDone=apM.filter(r=>r['状態']==='支払済');
+    const wait=S.ar.filter(r=>r['法人']===id&&isUnpaid(r)&&ymd(r['支払期日'])>=today);
+    const late=S.ar.filter(r=>r['法人']===id&&isUnpaid(r)&&ymd(r['支払期日'])>='2026-10-01'&&ymd(r['支払期日'])<today);
+    const making=S.ar.filter(r=>r['法人']===id&&['確認待ち','作成待ち','作成済'].includes(r['状態']));
+    const apLate=S.ap.filter(r=>r['法人']===id&&['支払予定','確認待ち'].includes(r['状態'])&&ymd(r['支払期日'])&&ymd(r['支払期日'])<today);
+    return `<div class="card ecard"><div class="ehead"><span class="ent ${id}">${esc(entShort(id))}</span><span class="en">${esc(e['正式名'])}</span></div>
+      <div class="gg">
+        ${gauge(sumA(arIn),sumA(arM),`${mLabel}の入金（期日が今月のもの）`,'in')}
+        ${gauge(sumP(apDone),sumP(apM),`${mLabel}の支払い（期日が今月のもの）`,'out')}
+      </div>
+      <div class="kpis">
+        <a class="kpi" data-v="bill" data-s="ar"><span>入金待ち</span><b>${wait.length}件</b><small>${yen(sumA(wait))}</small></a>
+        <a class="kpi ${late.length?'bad':''}" data-v="bill" data-s="dun"><span>期日を過ぎた入金</span><b>${late.length}件</b><small>${yen(sumA(late))}</small></a>
+        <a class="kpi ${making.length?'warn':''}" data-v="bill" data-s="ar"><span>送る前の請求</span><b>${making.length}件</b><small>${yen(sumA(making))}</small></a>
+        <a class="kpi ${apLate.length?'bad':''}" data-v="pay" data-s="ap"><span>期日を過ぎた支払い</span><b>${apLate.length}件</b><small>${yen(sumP(apLate))}</small></a>
+      </div></div>`;
+  }).join('');
+  return `<h1>ホーム</h1><p class="sub">${today} 時点。数字を押すとその一覧に移ります。</p>
+  <div class="quick">
+    <a class="qb" data-v="bill" data-s="new"><b>請求書を作る</b><small>話す・写真・入力</small></a>
+    <a class="qb" data-v="quote" data-s="qnew"><b>見積書を作る</b><small>受注したら請求書に</small></a>
+    <a class="qb" data-v="bill" data-s="ar"><b>請求の一覧</b><small>送る・入金済にする</small></a>
+    <a class="qb" data-v="pay" data-s="ap"><b>払うもの</b><small>月ごと・会社ごと</small></a>
+    <a class="qb" data-v="pay" data-s="expense"><b>立替・経費</b><small>請求書にまとめる</small></a>
+    <a class="qb" data-v="docs"><b>書類</b><small>Driveの保管状況</small></a>
   </div>
-  <div class="card"><h2>いま人がやること<small>${todo.length}件</small></h2>
-   ${todo.length?`<div class="tw"><table>${todo.map(([r,c,t,v,sb])=>`<tr class="row" data-id="${esc(r['請求ID']||r['受領ID'])}" data-v="${v}" data-s="${sb}"><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}<div style="font-size:11.5px;color:var(--mute)">${esc(r['件名'])}</div></td><td class="r">${yen(r['税込']||r['税込金額'])}</td><td><span class="pill ${c}">${esc(r['状態'])}</span><div style="font-size:11.5px;color:var(--ink2)">${esc(t)}</div></td></tr>`).join('')}</table></div>`:'<div class="empty">ありません</div>'}</div>
-  <div class="card"><h2>今期のはじまりから</h2>
-   <div class="tw"><table><tr><th>会社</th><th>期</th><th>開始</th><th class="r">出した請求</th><th class="r">受けた請求</th></tr>
-   ${(S.boot.entities||[]).map(e=>{const id=e['法人ID'];const a=since.filter(r=>r['法人']===id).length;const b=recv.filter(r=>r['法人']===id).length;
-     return `<tr><td>${entTag(id)} ${esc(e['正式名'])}</td><td>${id==='E01'?'第5期':'第4期'}</td><td>${fyStart[id]||''}</td><td class="r">${a}件</td><td class="r">${b}件</td></tr>`;}).join('')}
-   </table></div></div>
-  <div class="note">入金と支払の確認は、銀行の連携が終わるまでは手で「入金済」「支払済」に変えます。</div>`;
+  ${cards}
+  <div class="note">入金・支払の「済み」は、銀行連携が終わるまでは手で変えます。9月末までの分はすべて入金済みとして整理済みです。</div>`;
 }
 
 function segEntity(name, cur){
@@ -858,7 +881,7 @@ function vAp(){
   const overRows=live.filter(r=>{ const d=ymd(r['支払期日']); return d && d<today; });
   const thisRows=(g[thisM]||[]).filter(r=>!(ymd(r['支払期日'])<today)), laterRows=pick(rest.filter(m=>m!==thisM));
   const head=`<div class="tiles">
-    <div class="tile"><div class="l">今月（${Number(thisM.slice(5,7))}月）に払う</div>${entTiles(thisRows)}<div class="s">合計 ${yen(sumYen(thisRows))}</div></div>
+    <div class="tile"><div class="l">今月（${Number(thisM.slice(5,7))}月）に払う</div>${entTiles(thisRows)}<div class="s">残り ${yen(sumYen(thisRows))}</div>${(()=>{const all=S.ap.filter(r=>ymd(r['支払期日']).slice(0,7)===thisM&&['支払予定','確認待ち','支払済'].includes(r['状態'])&&Number(r['税込金額'])>0);const done=all.filter(r=>r['状態']==='支払済');return gauge(sumYen(done),sumYen(all),'今月の支払い進捗','out');})()}</div>
     <div class="tile${overRows.length?' bad':''}"><div class="l">期限を過ぎている</div>${entTiles(overRows)}<div class="s">合計 ${yen(sumYen(overRows))}</div></div>
     <div class="tile"><div class="l">来月以降</div>${entTiles(laterRows)}<div class="s">合計 ${yen(sumYen(laterRows))}</div></div>
   </div>`;
@@ -995,7 +1018,7 @@ function shrinkImage(file, max){
     fr.readAsDataURL(file);
   });
 }
-const TITLES={bill:'請求する',pay:'支払う',quote:'見積もる'};
+const TITLES={bill:'請求書',pay:'支払い',quote:'見積書'};
 function bindSegs(){
   document.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('button').forEach(b=>b.onclick=()=>{
     g.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
@@ -1023,6 +1046,7 @@ function renderInner(){
   m.innerHTML=body;
 
   m.querySelectorAll('.subnav button').forEach(b=>b.onclick=()=>{stopMic();S.sub[S.view]=b.dataset.s;render();});
+  m.querySelectorAll('.qb,.kpi').forEach(a=>a.onclick=()=>{ S.view=a.dataset.v; if(a.dataset.s) S.sub[a.dataset.v]=a.dataset.s; render(); window.scrollTo(0,0); });
   m.querySelectorAll('tr.row').forEach(tr=>tr.onclick=ev=>{ if(ev.target.closest('select,a,button')) return; if(tr.dataset.q){ S.qsel=tr.dataset.id; S.qedit=null; } else S.sel=tr.dataset.id; if(tr.dataset.v){S.view=tr.dataset.v; if(tr.dataset.s) S.sub[tr.dataset.v]=tr.dataset.s;} render(); });
   m.querySelectorAll('.stsel').forEach(s=>s.onchange=async()=>{ try{ await call('api_setStatus',s.dataset.sheet,s.dataset.col,s.dataset.id,s.value); toast('更新しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } });
   m.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{S.filter=b.dataset.f;render();});
