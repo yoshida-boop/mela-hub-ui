@@ -74,7 +74,7 @@ details.more.memo{margin:10px 0}
 .etile{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0 4px}
 .etile>div{display:flex;flex-direction:column;gap:2px}.etile b{font-size:17px;font-variant-numeric:tabular-nums;line-height:1.2}.etile small{font-size:11px;color:var(--mute)}
 .tile.bad .etile b{color:var(--bad)}
-.quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}@media(max-width:700px){.quick{grid-template-columns:repeat(2,1fr)}.qb{padding:11px 12px}.qb b{font-size:14px}.kpis{grid-template-columns:repeat(2,1fr)}}
 .qb{display:block;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 14px;cursor:pointer;text-decoration:none;color:inherit}.qb:hover{border-color:var(--acc)}.qb b{display:block;font-size:15px}.qb small{color:var(--mute);font-size:12px}
 .ecard .ehead{display:flex;align-items:center;gap:10px;margin-bottom:10px}.ecard .en{font-weight:700}
 .gg{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:12px}
@@ -219,7 +219,7 @@ const S = { view:'home', sub:{}, boot:null, ar:[], ap:[], line:[], expenses:[], 
 })();
 const subOf = v => S.sub[v] || (SUBS[v] ? SUBS[v][0][0] : null);
 
-const BUILD='2026-10-29a';
+const BUILD='2026-10-29b';
 (async()=>{ try{ const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text(); const m=t.match(/const BUILD='([^']+)'/); if(m&&m[1]!==BUILD){ location.reload(); } }catch(e){} })();
 const yen = n => n==null||n===''||isNaN(n) ? '—' : '¥'+Math.round(Number(n)).toLocaleString('ja-JP');
 const pill = s => `<span class="pill ${PILL[s]||'p-grey'}">${s||'—'}</span>`;
@@ -308,7 +308,8 @@ function gauge(done,total,label,cls){
 }
 function vHome(){
   const today=S.boot.today, thisM=today.slice(0,7), mLabel=`${Number(thisM.slice(5,7))}月`;
-  const ents=(S.boot.entities||[]).filter(e=>['E01','E02'].includes(e['法人ID'])||S.ar.some(r=>r['法人']===e['法人ID'])||S.ap.some(r=>r['法人']===e['法人ID']));
+  const act=id=>S.ar.some(r=>r['法人']===id&&!['入金済','取消'].includes(r['状態']))||S.ap.some(r=>r['法人']===id&&!['支払済','対象外'].includes(r['状態']));
+  const ents=(S.boot.entities||[]).filter(e=>['E01','E02'].includes(e['法人ID'])||act(e['法人ID']));
   const sumA=rs=>rs.reduce((t,r)=>t+(Number(r['税込'])||0),0), sumP=rs=>rs.reduce((t,r)=>t+(Number(r['税込金額'])||0),0);
   const cards=ents.map(e=>{
     const id=e['法人ID'];
