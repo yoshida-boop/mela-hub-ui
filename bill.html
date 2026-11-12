@@ -74,6 +74,10 @@ button,select,input,textarea{font:inherit;color:inherit}
 .skel{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--grey) 25%,#f7f5f2 50%,var(--grey) 75%);background-size:200% 100%;animation:sk 1.2s infinite;margin:8px 0}
 @keyframes sk{to{background-position:-200% 0}}
 .hide{display:none!important}
+.veil{position:fixed;inset:0;background:rgba(31,27,26,.55);backdrop-filter:blur(2px);z-index:70;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}.veil.on{opacity:1;pointer-events:auto}
+.veil .box{background:#fff;border-radius:16px;padding:22px 26px;min-width:240px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.veil .ring{width:44px;height:44px;border:4px solid var(--grey);border-top-color:var(--acc);border-radius:50%;margin:0 auto 12px;animation:sp .8s linear infinite}
+.veil b{display:block;font-size:15px;margin-bottom:4px}.veil small{color:var(--mute);font-size:12.5px}
 .pbar{position:fixed;left:0;top:0;height:3px;background:var(--acc);width:0;z-index:60;transition:width .25s linear;opacity:0}.pbar.on{opacity:1}
 .pct{font-variant-numeric:tabular-nums;min-width:3.2em;text-align:left}
 .note{font-size:12.5px;color:var(--mute)}
@@ -87,18 +91,18 @@ button,select,input,textarea{font:inherit;color:inherit}
 <div id="scrForm">
   <div id="dup" class="dup hide"></div>
   <div class="sec">
-    <h2>どこに</h2>
+    <h2>宛先</h2>
     <label class="f"><span>宛名</span><input class="in" id="to" placeholder="会社名または氏名" autocomplete="off"><div class="sug" id="sug_to"></div><div class="errmsg" id="e_to">宛名を入れてください</div></label>
-    <label class="f"><span>件名</span><input class="in" id="subject" placeholder="例: コンサルティング費（11月分）" autocomplete="off"><div class="sug" id="sug_subject"></div><div class="errmsg" id="e_subject">件名を入れてください</div></label>
   </div>
 
   <div class="sec">
-    <div class="row" style="justify-content:space-between;margin-bottom:10px"><h2 style="margin:0">いくら</h2><div class="seg" id="taxmode" style="width:170px"><button type="button" data-v="ex" class="on">税抜で入力</button><button type="button" data-v="in">税込で入力</button></div></div>
+    <div class="row" style="justify-content:space-between;margin-bottom:10px"><h2 style="margin:0">内容</h2><div class="seg" id="taxmode" style="width:170px"><button type="button" data-v="ex" class="on">税抜で入力</button><button type="button" data-v="in">税込で入力</button></div></div>
     <div id="items"></div>
     <button class="add" id="addItem" type="button">＋ 品目を追加</button>
     <div class="errmsg" id="e_items">金額を入れてください</div>
     <div class="total"><div>税込合計 <small id="taxlbl">消費税10%</small></div><b id="total">¥0</b></div>
-    <div class="photo" style="margin-top:10px"><label class="chip"><input type="file" id="photo" accept="image/*" multiple style="display:none">写真から埋める</label><span id="photomsg">見積書やチャットの画面から金額・宛名を読み取ります</span></div>
+    <label class="f" style="margin-top:12px"><span>件名（空欄なら品目名を使います）</span><input class="in" id="subject" placeholder="例: コンサルティング費（11月分）" autocomplete="off"><div class="sug" id="sug_subject"></div><div class="errmsg" id="e_subject">件名か品目名を入れてください</div></label>
+    <div class="photo" style="margin-top:4px"><label class="chip"><input type="file" id="photo" accept="image/*" multiple style="display:none">写真から埋める</label><span id="photomsg">見積書やチャットの画面から金額・宛名を読み取ります</span></div>
   </div>
 
   <div class="sec">
@@ -143,6 +147,7 @@ button,select,input,textarea{font:inherit;color:inherit}
 <div class="sheet" id="sheet"><div class="grab"></div><div id="sheetbody"></div></div>
 <div class="toast" id="toast"></div>
 <div class="pbar" id="pbar"></div>
+<div class="veil" id="veil"><div class="box"><div class="ring"></div><b id="veilttl">読み込んでいます</b><small id="veilsub"></small></div></div>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
@@ -172,6 +177,8 @@ function progress(btn,label,expectSec){
   return { done(){ clearInterval(h); draw(100); setTimeout(()=>{ bar.classList.remove('on'); bar.style.width='0'; },400); setTimeout(()=>setBusy(btn),250); }, fail(){ clearInterval(h); bar.classList.remove('on'); bar.style.width='0'; setBusy(btn); } };
 }
 function setBusy(btn,label){ if(label){ btn.dataset.l=btn.innerHTML; btn.classList.add('busy'); btn.innerHTML=`<span class="spin"></span><span>${esc(label)}</span>`; } else { btn.classList.remove('busy'); if(btn.dataset.l) btn.innerHTML=btn.dataset.l; } }
+let _veil=null;
+function veil(ttl,expectSec){ const v=$('veil'); if(!ttl){ if(_veil){ clearInterval(_veil); _veil=null; } v.classList.remove('on'); return; } $('veilttl').textContent=ttl; $('veilsub').textContent='0%'; v.classList.add('on'); const t0=Date.now(); if(_veil) clearInterval(_veil); _veil=setInterval(()=>{ const t=(Date.now()-t0)/1000; const p=Math.min(94,100*(1-Math.exp(-t/((expectSec||6)*0.55)))); $('veilsub').textContent=Math.round(p)+'%'+(t>12?'　もう少しかかっています':''); },200); }
 function show(scr){ ['scrForm','scrPrev','scrDone'].forEach(s=>$(s).classList.toggle('hide',s!==scr)); $('barForm').classList.toggle('hide',scr!=='scrForm'); $('barPrev').classList.toggle('hide',scr!=='scrPrev'); $('back').classList.toggle('hide',scr!=='scrPrev'); $('ttl').textContent=scr==='scrForm'?(S.id?'請求書を直す':'請求する'):scr==='scrPrev'?'発行しました':'完了'; window.scrollTo(0,0); }
 
 const S={boot:null,id:Q.get('id')||'',inv:null,via:'メール',rec:false,entity:'E01',taxIn:false};
@@ -179,7 +186,7 @@ const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${Str
 const endOfNextMonth=()=>{ const d=new Date(); return fmt(new Date(d.getFullYear(),d.getMonth()+2,0)); };
 const todayIso=()=>fmt(new Date());
 
-function itemRow(i){ i=i||{}; const wrap=document.createElement('div'); wrap.className='itemwrap'; const d=document.createElement('div'); d.className='item'; const shown=i.unit==null?'':(S.taxIn?toIn(i.unit):i.unit); d.innerHTML=`<input class="in nm" placeholder="品目" value="${esc(i.name||'')}" autocomplete="off"><input class="in qt" type="number" inputmode="numeric" min="1" value="${esc(i.qty||1)}" aria-label="数量"><input class="in un" type="number" inputmode="numeric" placeholder="${S.taxIn?'税込単価':'税抜単価'}" value="${esc(shown)}" aria-label="単価"><button class="x" type="button" aria-label="削除">×</button>`; wrap.appendChild(d); const sg=document.createElement('div'); sg.className='sug'; wrap.appendChild(sg); d.querySelector('.x').onclick=()=>{ if($('items').querySelectorAll('.item').length>1){ wrap.remove(); calc(); save(); } }; d.querySelectorAll('input').forEach(x=>x.oninput=()=>{ calc(); save(); clearErr(); }); const nm=d.querySelector('.nm'); nm.addEventListener('input',()=>suggest(nm,sg,()=>(S.boot&&S.boot.itemNames)||[])); nm.addEventListener('focus',()=>suggest(nm,sg,()=>(S.boot&&S.boot.itemNames)||[])); $('items').appendChild(wrap); return d; }
+function itemRow(i){ i=i||{}; const wrap=document.createElement('div'); wrap.className='itemwrap'; const d=document.createElement('div'); d.className='item'; const shown=i.unit==null?'':(S.taxIn?toIn(i.unit):i.unit); d.innerHTML=`<input class="in nm" placeholder="品目（例: コンサルティング費 11月分）" value="${esc(i.name||'')}" autocomplete="off"><input class="in qt" type="number" inputmode="numeric" min="1" value="${esc(i.qty||1)}" aria-label="数量"><input class="in un" type="number" inputmode="numeric" placeholder="${S.taxIn?'税込単価':'税抜単価'}" value="${esc(shown)}" aria-label="単価"><button class="x" type="button" aria-label="削除">×</button>`; wrap.appendChild(d); const sg=document.createElement('div'); sg.className='sug'; wrap.appendChild(sg); d.querySelector('.x').onclick=()=>{ if($('items').querySelectorAll('.item').length>1){ wrap.remove(); calc(); save(); } }; d.querySelectorAll('input').forEach(x=>x.oninput=()=>{ calc(); save(); clearErr(); }); const nm=d.querySelector('.nm'); nm.addEventListener('input',()=>suggest(nm,sg,()=>(S.boot&&S.boot.itemNames)||[])); nm.addEventListener('focus',()=>suggest(nm,sg,()=>(S.boot&&S.boot.itemNames)||[])); $('items').appendChild(wrap); return d; }
 const rate=()=>Number($('tax').value)/100;
 const toEx=incl=>{ const r=rate(); return r?Math.round(incl/(1+r)):Math.round(incl); };
 const toIn=ex=>{ const r=rate(); return Math.round(ex)+Math.floor(Math.round(ex)*r); };
@@ -190,9 +197,9 @@ function calc(){ const it=items(); const r=rate(); const sub=it.reduce((s,i)=>s+
 function clearErr(){ document.querySelectorAll('.errmsg').forEach(e=>e.classList.remove('on')); document.querySelectorAll('.in.err').forEach(e=>e.classList.remove('err')); }
 function form(){ return { id:S.id||'', entityId:S.entity, to:$('to').value.trim(), subject:$('subject').value.trim(), date:$('date').value||todayIso(), due:$('due').value, items:items(), taxRate:Number($('tax').value), mail:$('mail').value.trim(), via:S.via, staff:$('staff').value, accountId:$('acct').value, note:$('note').value.trim(), recurring:S.rec?{until:$('recuntil').value?$('recuntil').value:''}:null }; }
 function save(){ if(S.id) return; try{ localStorage.setItem('bill-draft',JSON.stringify(form())); }catch(e){} }
-function fill(p){ $('to').value=p.to||''; $('subject').value=p.subject||''; $('items').innerHTML=''; (p.items&&p.items.length?p.items:[{}]).forEach(itemRow); $('due').value=p.due||''; $('mail').value=p.mail||''; setVia(p.via||'メール'); $('note').value=p.note||''; if(p.date) $('date').value=p.date; if(p.taxRate!=null) $('tax').value=String(p.taxRate); if(p.staff) $('staff').value=p.staff; if(p.entityId) setEntity(p.entityId); if(p.accountId) $('acct').value=p.accountId; calc(); }
+function fill(p){ $('to').value=p.to||''; $('subject').value=p.subject||''; $('items').innerHTML=''; (p.items&&p.items.length?p.items:[{}]).forEach(itemRow); $('due').value=p.due||''; $('mail').value=p.mail||''; setVia(p.via||'メール'); $('note').value=p.note||''; if(p.date) $('date').value=p.date; if(p.taxRate!=null) $('tax').value=String(p.taxRate); if(p.staff) $('staff').value=p.staff; if(p.entityId) setEntity(p.entityId); if(p.accountId){ if(![...$('acct').options].some(o=>o.value===p.accountId)){ const a=(S.boot&&S.boot.accounts||[]).find(x=>x.id===p.accountId); $('acct').insertAdjacentHTML('beforeend',`<option value="${esc(p.accountId)}">${esc(a?a.label+'（'+a.name+'）':p.accountId)}</option>`); } $('acct').value=p.accountId; } S.acct=p.accountId||S.acct||''; calc(); }
 function setVia(v){ S.via=v; $('via').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); $('mailf').classList.toggle('hide',v!=='メール'); }
-function setEntity(id){ S.entity=id; $('ent').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===id)); const sel=$('acct'); sel.innerHTML=(S.boot.accounts||[]).filter(a=>a.entity===id).map(a=>`<option value="${esc(a.id)}">${esc(a.label)}（${esc(a.name)}）</option>`).join(''); }
+function setEntity(id){ const prev=$('acct').value; S.entity=id; $('ent').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===id)); const sel=$('acct'); const list=(S.boot&&S.boot.accounts||[]).filter(a=>a.entity===id); sel.innerHTML=list.map(a=>`<option value="${esc(a.id)}">${esc(a.label)}（${esc(a.name)}）</option>`).join(''); if(list.some(a=>a.id===prev)) sel.value=prev; }
 
 function renderBoot(){
   const b=S.boot;
@@ -231,7 +238,7 @@ function validate(){
   clearErr(); let ok=true, first=null;
   const bad=(id,eid)=>{ ok=false; $(id).classList.add('err'); $(eid).classList.add('on'); first=first||$(id); };
   if(!$('to').value.trim()) bad('to','e_to');
-  if(!$('subject').value.trim()) bad('subject','e_subject');
+  if(!$('subject').value.trim()){ const it0=items()[0]; if(it0&&it0.name) $('subject').value=it0.name; else bad('subject','e_subject'); }
   const it=items(); if(!it.length||it.some(i=>!i.name||i.unit==null||isNaN(i.unit))){ ok=false; $('e_items').classList.add('on'); first=first||$('items'); }
   if(S.via==='メール'&&!/^[^@\s]+@[^@\s]+\.[^@\s]+(\s*,\s*[^@\s]+@[^@\s]+\.[^@\s]+)*$/.test($('mail').value.trim())) bad('mail','e_mail');
   if(!ok&&first) first.scrollIntoView({behavior:'smooth',block:'center'});
@@ -252,7 +259,7 @@ $('issue').onclick=async()=>{
 };
 
 function showPreview(r){
-  $('psum').innerHTML=`<div><span>宛名</span>${esc(r.to)}</div><div><span>金額（税込）</span><b>${yen(r.total)}</b></div><div><span>請求番号</span>${esc(r.id)}</div><div><span>送り方</span>${esc(r.via)}${r.via==='メール'&&r.mail?`<br><small>${esc(r.mail)}</small>`:''}</div>`;
+  const acc=(S.boot&&S.boot.accounts||[]).find(a=>a.id===(r.accountId||$('acct').value)); $('psum').innerHTML=`<div><span>宛名</span>${esc(r.to)}</div><div><span>金額（税込）</span><b>${yen(r.total)}</b></div><div><span>請求番号</span>${esc(r.id)}</div><div><span>送り方</span>${esc(r.via)}${r.via==='メール'&&r.mail?`<br><small>${esc(r.mail)}</small>`:''}</div><div style="grid-column:1/-1"><span>振込先</span>${acc?esc(acc.label+'　'+acc.name):'—'}</div>`;
   const f=$('pframe'); f.srcdoc=r.html||'<p style="font-family:sans-serif;padding:20px">プレビューを作れませんでした</p>';
   const w=$('prevwrap').clientWidth||360; const sc=w/794; f.style.transform=`scale(${sc})`; $('prevwrap').style.height=Math.round(1123*sc)+'px';
   const sendBtn=$('send'); sendBtn.innerHTML=`<span>${r.via==='メール'?'メールで送る':'LINEで送る'}</span>`; sendBtn.dataset.l=sendBtn.innerHTML;
@@ -302,18 +309,18 @@ $('del').onclick=()=>{
   try{ S.taxIn=localStorage.getItem('bill-taxmode')==='in'; $('taxmode').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.v===(S.taxIn?'in':'ex'))); }catch(e){}
   try{ const c=JSON.parse(localStorage.getItem('bill-boot')||'null'); if(c){ S.boot=c; renderBoot(); } }catch(e){}
   if(!S.boot){ $('status').innerHTML='<div class="skel"></div><div class="skel" style="width:60%"></div>'; }
-  if(S.id){ fill({items:[{}]}); $('ttl').textContent='読み込み中…'; }
+  if(S.id){ fill({items:[{}]}); $('ttl').textContent='請求書'; veil('請求書を読み込んでいます',6); }
   else { let d=null; try{ d=JSON.parse(localStorage.getItem('bill-draft')||'null'); }catch(e){} fill(d&&(d.to||d.subject||(d.items||[]).some(i=>i.name))?d:{items:[{}],due:endOfNextMonth(),date:todayIso()}); if(d&&d.recurring){ S.rec=true; $('rec').classList.add('on'); $('recopt').classList.remove('hide'); $('recuntil').value=d.recurring.until||''; } }
   if(LIFF_ID&&window.liff){ try{ await liff.init({liffId:LIFF_ID}); }catch(e){} }
-  try{
-    const b=await call('api_billBoot'); S.boot=b; try{ localStorage.setItem('bill-boot',JSON.stringify(b)); }catch(e){}
-    const keep=form(); renderBoot(); if(keep.staff) $('staff').value=keep.staff; if(keep.accountId) $('acct').value=keep.accountId; $('status').textContent='';
-  }catch(e){ $('status').textContent='取引先の一覧を取れませんでした。入力はできます'; }
+  const bootP=call('api_billBoot').then(b=>{ S.boot=b; try{ localStorage.setItem('bill-boot',JSON.stringify(b)); }catch(e){} const keep=form(); renderBoot(); if(keep.entityId) setEntity(keep.entityId); if(keep.staff) $('staff').value=keep.staff; if(keep.accountId) $('acct').value=keep.accountId; $('status').textContent=''; }).catch(e=>{ $('status').textContent='取引先の一覧を取れませんでした。入力はできます'; });
+  if(!S.id) await bootP;
   if(S.id){
-    try{ const inv=await call('api_getInvoice',S.id); S.inv=Object.assign({},inv,{to:inv.to,mail:inv.mail,via:inv.via,total:inv.total,html:inv.html,status:inv.status});
-      fill(inv); setEntity(inv.entityId||S.entity);
+    const invP=call('api_getInvoice',S.id); await bootP;
+    try{ const inv=await invP; S.inv=Object.assign({},inv,{to:inv.to,mail:inv.mail,via:inv.via,total:inv.total,html:inv.html,status:inv.status});
+      fill(inv);
+      veil(null);
       if(Q.get('step')==='preview'||Q.get('step')==='share'){ showPreview(S.inv); if(Q.get('step')==='share') lineShare(S.inv); } else show('scrForm');
-    }catch(e){ toast('請求を開けませんでした: '+(e.message||e)); S.id=''; show('scrForm'); }
+    }catch(e){ veil(null); toast('請求を開けませんでした: '+(e.message||e)); S.id=''; show('scrForm'); }
   }
 })();
 </script>
