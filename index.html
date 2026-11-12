@@ -219,7 +219,7 @@ const S = { view:'home', sub:{}, boot:null, ar:[], ap:[], line:[], expenses:[], 
 })();
 const subOf = v => S.sub[v] || (SUBS[v] ? SUBS[v][0][0] : null);
 
-const BUILD='2026-11-11a';
+const BUILD='2026-11-12a';
 (async()=>{ try{ const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text(); const m=t.match(/const BUILD='([^']+)'/); if(m&&m[1]!==BUILD){ location.reload(); } }catch(e){} })();
 const yen = n => n==null||n===''||isNaN(n) ? '—' : '¥'+Math.round(Number(n)).toLocaleString('ja-JP');
 const pill = s => `<span class="pill ${PILL[s]||'p-grey'}">${s||'—'}</span>`;
@@ -390,6 +390,7 @@ function contractCard(){
   </div>`;
 }
 function vNew(){
+  location.href='bill.html'; return '<div class="empty">「請求する」画面へ移動します…</div>';
   const b=S.boot;
   const clients=[...new Set(S.ar.map(r=>r['取引先']).concat(b.clients.map(c=>c['正式社名'])))].filter(Boolean);
   const d=new Date(b.today);
