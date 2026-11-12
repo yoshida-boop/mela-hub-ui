@@ -46,7 +46,7 @@ button,select,input,textarea{font:inherit;color:inherit}
 .btn:not(.pri) .spin{border-color:rgba(0,0,0,.15);border-top-color:var(--ink2)}
 @keyframes sp{to{transform:rotate(360deg)}}
 .photo{display:flex;gap:10px;align-items:center;font-size:13px;color:var(--ink2)}
-.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:20px;padding:6px 12px;background:#fff;cursor:pointer;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:20px;padding:6px 12px;background:#fff;cursor:pointer;font-size:13px;white-space:nowrap;flex:none}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .2s,transform .2s;z-index:50;max-width:92%;display:flex;gap:10px;align-items:center;pointer-events:none}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
 .toast button{border:0;background:none;color:#FFB8A8;font-weight:700;padding:0;cursor:pointer}
@@ -162,8 +162,9 @@ function setBusy(btn,label){ if(label){ btn.dataset.l=btn.innerHTML; btn.classLi
 function show(scr){ ['scrForm','scrPrev','scrDone'].forEach(s=>$(s).classList.toggle('hide',s!==scr)); $('barForm').classList.toggle('hide',scr!=='scrForm'); $('barPrev').classList.toggle('hide',scr!=='scrPrev'); $('back').classList.toggle('hide',scr!=='scrPrev'); $('ttl').textContent=scr==='scrForm'?(S.id?'請求書を直す':'請求する'):scr==='scrPrev'?'発行しました':'完了'; window.scrollTo(0,0); }
 
 const S={boot:null,id:Q.get('id')||'',inv:null,via:'メール',rec:false,entity:'E01'};
-const endOfNextMonth=()=>{ const d=new Date(); return new Date(d.getFullYear(),d.getMonth()+2,0).toISOString().slice(0,10); };
-const todayIso=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const endOfNextMonth=()=>{ const d=new Date(); return fmt(new Date(d.getFullYear(),d.getMonth()+2,0)); };
+const todayIso=()=>fmt(new Date());
 
 function itemRow(i){ i=i||{}; const d=document.createElement('div'); d.className='item'; d.innerHTML=`<input class="in nm" placeholder="品目" value="${esc(i.name||'')}"><input class="in qt" type="number" inputmode="numeric" min="1" value="${esc(i.qty||1)}" aria-label="数量"><input class="in un" type="number" inputmode="numeric" placeholder="単価" value="${i.unit==null?'':esc(i.unit)}" aria-label="単価"><button class="x" type="button" aria-label="削除">×</button>`; d.querySelector('.x').onclick=()=>{ if($('items').children.length>1){ d.remove(); calc(); save(); } }; d.querySelectorAll('input').forEach(x=>x.oninput=()=>{ calc(); save(); clearErr(); }); $('items').appendChild(d); return d; }
 function items(){ return [...$('items').querySelectorAll('.item')].map(d=>({name:d.querySelector('.nm').value.trim(),qty:Number(d.querySelector('.qt').value||1),unit:d.querySelector('.un').value===''?null:Number(d.querySelector('.un').value)})).filter(i=>i.name||i.unit!=null); }
