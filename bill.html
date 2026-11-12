@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>請求する</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#F6F4F1;--panel:#fff;--line:#E4E0DB;--line2:#CFC9C2;--ink:#1F1B1A;--ink2:#5B5551;--mute:#8C857F;--acc:#F05A3E;--accbg:#FDEDE8;--ok:#1E8A5A;--okbg:#E3F3EA;--warn:#B26A00;--warnbg:#FBEFD6;--bad:#C63D2F;--badbg:#FBE7E4;--info:#2F6FB7;--grey:#EFECE8}
+*{box-sizing:border-box}html,body{max-width:100%;overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans JP","Hiragino Sans",sans-serif;font-size:15px;line-height:1.6;-webkit-text-size-adjust:100%}
+button,select,input,textarea{font:inherit;color:inherit}
+.top{position:sticky;top:0;z-index:20;background:rgba(246,244,241,.92);backdrop-filter:blur(8px);padding:12px 16px 8px;display:flex;align-items:center;gap:10px}
+.top h1{font-size:18px;margin:0;flex:1}
+.top .back{border:0;background:none;color:var(--info);padding:6px 0;font-size:14px;cursor:pointer}
+.wrap{padding:0 16px 120px;max-width:560px;margin:0 auto}
+.sec{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 12px}
+.sec h2{font-size:13px;color:var(--mute);margin:0 0 10px;font-weight:500}
+.f{display:block;margin:0 0 12px}
+.f>span{display:block;font-size:12.5px;color:var(--ink2);margin-bottom:4px}
+.in{width:100%;border:1px solid var(--line2);border-radius:10px;padding:11px 12px;background:#fff;font-size:16px;outline:none;transition:border-color .15s,box-shadow .15s}
+.in:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--accbg)}
+.in.err{border-color:var(--bad);box-shadow:0 0 0 3px var(--badbg)}
+.errmsg{color:var(--bad);font-size:12.5px;margin-top:4px;display:none}
+.errmsg.on{display:block}
+.seg{display:flex;background:var(--grey);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:none;border-radius:8px;padding:9px 6px;font-size:14px;color:var(--ink2);cursor:pointer;transition:background .15s,color .15s}
+.seg button.on{background:#fff;color:var(--ink);font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.row{display:flex;gap:8px;align-items:center}
+.item{display:grid;grid-template-columns:1fr 64px 110px 32px;gap:6px;margin-bottom:8px;align-items:center}
+.item .in{padding:9px 10px;font-size:15px}
+.item .x{border:0;background:none;color:var(--mute);font-size:20px;cursor:pointer;padding:0;line-height:1}
+.add{border:1px dashed var(--line2);background:none;border-radius:10px;padding:9px;width:100%;color:var(--ink2);cursor:pointer;font-size:14px}
+.total{display:flex;justify-content:space-between;align-items:baseline;padding:10px 2px 0;border-top:1px solid var(--line);margin-top:4px}
+.total b{font-size:22px;font-variant-numeric:tabular-nums}
+.total small{color:var(--mute);font-size:12px;margin-left:6px}
+.tog{display:flex;align-items:center;justify-content:space-between;padding:4px 0}
+.sw{position:relative;width:46px;height:28px;border-radius:14px;background:var(--line2);border:0;cursor:pointer;transition:background .2s;flex:none}
+.sw i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.sw.on{background:var(--acc)}.sw.on i{left:21px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;gap:10px;z-index:30}
+.btn{border:1px solid var(--line2);background:#fff;border-radius:12px;padding:13px 16px;font-size:15px;cursor:pointer;transition:transform .08s,opacity .15s,background .15s;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700;flex:1}
+.btn.ghost{border-color:transparent;background:none;color:var(--ink2)}
+.btn.danger{color:var(--bad);border-color:#F3C9C4}
+.btn[disabled]{opacity:.6;pointer-events:none}
+.btn.busy{pointer-events:none}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;flex:none}
+.btn:not(.pri) .spin{border-color:rgba(0,0,0,.15);border-top-color:var(--ink2)}
+@keyframes sp{to{transform:rotate(360deg)}}
+.photo{display:flex;gap:10px;align-items:center;font-size:13px;color:var(--ink2)}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:20px;padding:6px 12px;background:#fff;cursor:pointer;font-size:13px}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .2s,transform .2s;z-index:50;max-width:92%;display:flex;gap:10px;align-items:center;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+.toast button{border:0;background:none;color:#FFB8A8;font-weight:700;padding:0;cursor:pointer}
+.sheetbg{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+.sheetbg.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:18px 18px 0 0;padding:14px 16px calc(16px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .25s cubic-bezier(.2,.8,.2,1);z-index:45;max-width:560px;margin:0 auto}
+.sheet.on{transform:translateY(0)}
+.sheet .grab{width:36px;height:4px;border-radius:2px;background:var(--line2);margin:0 auto 12px}
+.sheet h3{font-size:16px;margin:0 0 6px}
+.sheet p{margin:0 0 14px;color:var(--ink2);font-size:14px}
+.sheet .btn{width:100%;margin-bottom:8px}
+.prev{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative}
+.prev iframe{border:0;width:794px;height:1123px;transform-origin:0 0;pointer-events:none;display:block}
+.prevwrap{overflow:hidden}
+.sum{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:14px}
+.sum span{color:var(--mute);font-size:12px;display:block}
+.done{text-align:center;padding:30px 0 10px}
+.check{width:72px;height:72px;border-radius:50%;background:var(--okbg);margin:0 auto 14px;display:flex;align-items:center;justify-content:center;animation:pop .35s cubic-bezier(.2,.8,.2,1)}
+.check svg{width:36px;height:36px}
+.check path{stroke:var(--ok);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40;animation:draw .4s .15s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+.done h2{font-size:18px;margin:0 0 6px}
+.done p{color:var(--ink2);margin:0 0 18px;font-size:14px}
+.skel{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--grey) 25%,#f7f5f2 50%,var(--grey) 75%);background-size:200% 100%;animation:sk 1.2s infinite;margin:8px 0}
+@keyframes sk{to{background-position:-200% 0}}
+.hide{display:none!important}
+.note{font-size:12.5px;color:var(--mute)}
+.dup{background:var(--warnbg);border:1px solid #F0D9A8;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px}
+</style></head>
+<body>
+<div class="top"><button class="back hide" id="back">‹ 戻る</button><h1 id="ttl">請求する</h1></div>
+<div class="wrap">
+
+<div id="scrForm">
+  <div id="dup" class="dup hide"></div>
+  <div class="sec">
+    <h2>どこに</h2>
+    <label class="f"><span>宛名</span><input class="in" id="to" list="clients" placeholder="会社名または氏名" autocomplete="off"><div class="errmsg" id="e_to">宛名を入れてください</div></label>
+    <datalist id="clients"></datalist>
+    <label class="f"><span>件名</span><input class="in" id="subject" placeholder="例: コンサルティング費（11月分）"><div class="errmsg" id="e_subject">件名を入れてください</div></label>
+  </div>
+
+  <div class="sec">
+    <h2>いくら（単価は税抜）</h2>
+    <div id="items"></div>
+    <button class="add" id="addItem" type="button">＋ 品目を追加</button>
+    <div class="errmsg" id="e_items">金額を入れてください</div>
+    <div class="total"><div>税込合計 <small id="taxlbl">消費税10%</small></div><b id="total">¥0</b></div>
+    <div class="photo" style="margin-top:10px"><label class="chip"><input type="file" id="photo" accept="image/*" multiple style="display:none">写真から埋める</label><span id="photomsg">見積書やチャットの画面から金額・宛名を読み取ります</span></div>
+  </div>
+
+  <div class="sec">
+    <h2>いつまでに・どう送る</h2>
+    <label class="f"><span>支払期日</span><input class="in" id="due" type="date"></label>
+    <div class="f"><span>送り方</span><div class="seg" id="via"><button type="button" data-v="メール" class="on">メール</button><button type="button" data-v="LINE">LINE</button></div></div>
+    <label class="f" id="mailf"><span>送付先メール</span><input class="in" id="mail" type="email" placeholder="example@company.jp" autocomplete="off"><div class="errmsg" id="e_mail">メールで送るなら宛先を入れてください</div></label>
+    <div class="tog"><div><b>毎月この内容で請求する</b><div class="note">最終週の月曜に自動で作り、LINEに届きます</div></div><button class="sw" id="rec" type="button" aria-label="毎月"><i></i></button></div>
+    <div id="recopt" class="hide" style="margin-top:8px"><label class="f"><span>いつまで（空欄なら続く限り）</span><input class="in" id="recuntil" type="month"></label></div>
+  </div>
+
+  <details class="sec" id="more"><summary style="cursor:pointer;color:var(--ink2);font-size:14px">細かい設定（発行元・担当・口座・備考）</summary>
+    <div style="margin-top:10px">
+      <div class="f"><span>発行元</span><div class="seg" id="ent"></div></div>
+      <label class="f"><span>担当</span><select class="in" id="staff"></select></label>
+      <label class="f"><span>振込先</span><select class="in" id="acct"></select></label>
+      <label class="f"><span>請求日</span><input class="in" id="date" type="date"></label>
+      <label class="f"><span>消費税</span><select class="in" id="tax"><option value="10">10%</option><option value="8">8%</option><option value="0">なし</option></select></label>
+      <label class="f"><span>備考（請求書に載せる）</span><textarea class="in" id="note" rows="2"></textarea></label>
+    </div>
+  </details>
+  <div class="note" id="status"></div>
+</div>
+
+<div id="scrPrev" class="hide">
+  <div class="sec"><div class="sum" id="psum"></div></div>
+  <div class="prev"><div class="prevwrap" id="prevwrap"><iframe id="pframe" title="請求書プレビュー"></iframe></div></div>
+  <div class="note" style="margin:10px 2px">LINEにもカードを送りました。この画面を閉じても、LINEのカードから送信できます。</div>
+</div>
+
+<div id="scrDone" class="hide">
+  <div class="sec done"><div class="check"><svg viewBox="0 0 36 36"><path d="M8 19l7 7 13-15"/></svg></div><h2 id="dttl">送信しました</h2><p id="dsub"></p>
+    <button class="btn" id="dnew" type="button" style="margin:0 auto">続けて請求する</button></div>
+</div>
+
+</div>
+
+<div class="bar" id="barForm"><button class="btn ghost" id="clear" type="button">消す</button><button class="btn pri" id="issue" type="button"><span>発行する</span></button></div>
+<div class="bar hide" id="barPrev"><button class="btn" id="edit" type="button">編集</button><button class="btn danger" id="del" type="button">削除</button><button class="btn pri" id="send" type="button"><span>メールで送る</span></button></div>
+
+<div class="sheetbg" id="sheetbg"></div>
+<div class="sheet" id="sheet"><div class="grab"></div><div id="sheetbody"></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+const GAS_URL='https://script.google.com/macros/s/AKfycbwXOKcewGxJTEUf2IfNTWgElPXqFvfZVHpkKEwWFNn3nUMzqwkuDBtO7sHXsmqeaQIK/exec';
+const CODE='q3sqawj3';
+const LIFF_ID='';
+const Q=new URLSearchParams(location.search);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const yen=n=>'¥'+Math.round(Number(n)||0).toLocaleString('ja-JP');
+async function call(fn,...args){
+  const r=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({api:fn,code:CODE,args}),redirect:'follow'});
+  const j=await r.json(); if(!j.ok) throw new Error(j.error||'error'); return j.result;
+}
+let _t; function toast(m,undo){ const t=$('toast'); t.innerHTML=esc(m)+(undo?' <button type="button" id="undo">元に戻す</button>':''); t.classList.add('on'); clearTimeout(_t); _t=setTimeout(()=>t.classList.remove('on'),undo?6000:3200); if(undo){ $('undo').onclick=()=>{ t.classList.remove('on'); undo(); }; } }
+function sheet(html){ $('sheetbody').innerHTML=html; $('sheet').classList.add('on'); $('sheetbg').classList.add('on'); }
+function closeSheet(){ $('sheet').classList.remove('on'); $('sheetbg').classList.remove('on'); }
+$('sheetbg').onclick=closeSheet;
+function setBusy(btn,label){ if(label){ btn.dataset.l=btn.innerHTML; btn.classList.add('busy'); btn.innerHTML=`<span class="spin"></span><span>${esc(label)}</span>`; } else { btn.classList.remove('busy'); if(btn.dataset.l) btn.innerHTML=btn.dataset.l; } }
+function show(scr){ ['scrForm','scrPrev','scrDone'].forEach(s=>$(s).classList.toggle('hide',s!==scr)); $('barForm').classList.toggle('hide',scr!=='scrForm'); $('barPrev').classList.toggle('hide',scr!=='scrPrev'); $('back').classList.toggle('hide',scr!=='scrPrev'); $('ttl').textContent=scr==='scrForm'?(S.id?'請求書を直す':'請求する'):scr==='scrPrev'?'発行しました':'完了'; window.scrollTo(0,0); }
+
+const S={boot:null,id:Q.get('id')||'',inv:null,via:'メール',rec:false,entity:'E01'};
+const endOfNextMonth=()=>{ const d=new Date(); return new Date(d.getFullYear(),d.getMonth()+2,0).toISOString().slice(0,10); };
+const todayIso=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+
+function itemRow(i){ i=i||{}; const d=document.createElement('div'); d.className='item'; d.innerHTML=`<input class="in nm" placeholder="品目" value="${esc(i.name||'')}"><input class="in qt" type="number" inputmode="numeric" min="1" value="${esc(i.qty||1)}" aria-label="数量"><input class="in un" type="number" inputmode="numeric" placeholder="単価" value="${i.unit==null?'':esc(i.unit)}" aria-label="単価"><button class="x" type="button" aria-label="削除">×</button>`; d.querySelector('.x').onclick=()=>{ if($('items').children.length>1){ d.remove(); calc(); save(); } }; d.querySelectorAll('input').forEach(x=>x.oninput=()=>{ calc(); save(); clearErr(); }); $('items').appendChild(d); return d; }
+function items(){ return [...$('items').querySelectorAll('.item')].map(d=>({name:d.querySelector('.nm').value.trim(),qty:Number(d.querySelector('.qt').value||1),unit:d.querySelector('.un').value===''?null:Number(d.querySelector('.un').value)})).filter(i=>i.name||i.unit!=null); }
+function calc(){ const it=items(); const rate=Number($('tax').value)/100; const sub=it.reduce((s,i)=>s+(i.unit==null?0:i.qty*i.unit),0); const tax=Math.floor(sub*rate); $('total').textContent=yen(sub+tax); $('taxlbl').textContent=rate?`消費税${Math.round(rate*100)}% ${yen(tax)}`:'税なし'; }
+function clearErr(){ document.querySelectorAll('.errmsg').forEach(e=>e.classList.remove('on')); document.querySelectorAll('.in.err').forEach(e=>e.classList.remove('err')); }
+function form(){ return { id:S.id||'', entityId:S.entity, to:$('to').value.trim(), subject:$('subject').value.trim(), date:$('date').value||todayIso(), due:$('due').value, items:items(), taxRate:Number($('tax').value), mail:$('mail').value.trim(), via:S.via, staff:$('staff').value, accountId:$('acct').value, note:$('note').value.trim(), recurring:S.rec?{until:$('recuntil').value?$('recuntil').value:''}:null }; }
+function save(){ if(S.id) return; try{ localStorage.setItem('bill-draft',JSON.stringify(form())); }catch(e){} }
+function fill(p){ $('to').value=p.to||''; $('subject').value=p.subject||''; $('items').innerHTML=''; (p.items&&p.items.length?p.items:[{}]).forEach(itemRow); $('due').value=p.due||''; $('mail').value=p.mail||''; setVia(p.via||'メール'); $('note').value=p.note||''; if(p.date) $('date').value=p.date; if(p.taxRate!=null) $('tax').value=String(p.taxRate); if(p.staff) $('staff').value=p.staff; if(p.entityId) setEntity(p.entityId); if(p.accountId) $('acct').value=p.accountId; calc(); }
+function setVia(v){ S.via=v; $('via').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); $('mailf').classList.toggle('hide',v!=='メール'); }
+function setEntity(id){ S.entity=id; $('ent').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===id)); const sel=$('acct'); sel.innerHTML=(S.boot.accounts||[]).filter(a=>a.entity===id).map(a=>`<option value="${esc(a.id)}">${esc(a.label)}（${esc(a.name)}）</option>`).join(''); }
+
+function renderBoot(){
+  const b=S.boot;
+  $('clients').innerHTML=b.clients.map(c=>`<option value="${esc(c.name)}">`).join('');
+  $('ent').innerHTML=b.entities.map(e=>`<button type="button" data-v="${esc(e.id)}">${esc(e.short||e.name)}</button>`).join('');
+  $('ent').querySelectorAll('button').forEach(x=>x.onclick=()=>{ setEntity(x.dataset.v); save(); });
+  $('staff').innerHTML=b.staff.map(s=>`<option>${esc(s)}</option>`).join('');
+  setEntity(S.entity);
+}
+$('to').addEventListener('change',()=>{ const c=(S.boot&&S.boot.clients||[]).find(x=>x.name===$('to').value.trim()); if(c){ if(c.mail&&!$('mail').value) $('mail').value=c.mail; if(c.via==='LINE') setVia('LINE'); if(c.staff) $('staff').value=c.staff; } save(); });
+$('via').querySelectorAll('button').forEach(b=>b.onclick=()=>{ setVia(b.dataset.v); save(); clearErr(); });
+$('rec').onclick=()=>{ S.rec=!S.rec; $('rec').classList.toggle('on',S.rec); $('recopt').classList.toggle('hide',!S.rec); save(); };
+$('addItem').onclick=()=>{ itemRow().querySelector('.nm').focus(); };
+['to','subject','due','mail','note','date','tax','staff','acct','recuntil'].forEach(id=>$(id).addEventListener('input',()=>{ save(); clearErr(); if(id==='tax') calc(); }));
+$('clear').onclick=()=>{ const prev=form(); fill({items:[{}],due:endOfNextMonth(),date:todayIso()}); try{ localStorage.removeItem('bill-draft'); }catch(e){} toast('消しました',()=>{ fill(prev); save(); }); };
+
+$('photo').onchange=async()=>{
+  const files=[...$('photo').files].slice(0,4); if(!files.length) return;
+  $('photomsg').innerHTML='<span class="spin" style="display:inline-block;vertical-align:middle;margin-right:6px"></span>読み取っています…';
+  try{
+    const urls=await Promise.all(files.map(shrink));
+    const p=await call('api_parseImage',urls,$('subject').value||'');
+    const it=(p.items||[]).map(i=>({name:i.name,qty:i.qty||1,unit:i.unit==null?null:(p.tax_included_input?Math.round(i.unit/1.1):i.unit)}));
+    fill(Object.assign(form(),{to:p.client||$('to').value,subject:p.subject||$('subject').value,items:it.length?it:items(),due:p.due||$('due').value,mail:p.mail||$('mail').value,entityId:p.entity||S.entity}));
+    save(); $('photomsg').textContent='写真から入れました。内容を確認してください'; toast('写真から入れました');
+  }catch(e){ $('photomsg').textContent='読み取れませんでした'; toast('読み取れませんでした: '+(e.message||e)); }
+  $('photo').value='';
+};
+function shrink(file){ return new Promise((res,rej)=>{ const img=new Image(); const u=URL.createObjectURL(file); img.onload=()=>{ const max=1600; const s=Math.min(1,max/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s); c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(u); res(c.toDataURL('image/jpeg',.85)); }; img.onerror=rej; img.src=u; }); }
+
+function validate(){
+  clearErr(); let ok=true, first=null;
+  const bad=(id,eid)=>{ ok=false; $(id).classList.add('err'); $(eid).classList.add('on'); first=first||$(id); };
+  if(!$('to').value.trim()) bad('to','e_to');
+  if(!$('subject').value.trim()) bad('subject','e_subject');
+  const it=items(); if(!it.length||it.some(i=>!i.name||i.unit==null||isNaN(i.unit))){ ok=false; $('e_items').classList.add('on'); first=first||$('items'); }
+  if(S.via==='メール'&&!/^[^@\s]+@[^@\s]+\.[^@\s]+(\s*,\s*[^@\s]+@[^@\s]+\.[^@\s]+)*$/.test($('mail').value.trim())) bad('mail','e_mail');
+  if(!ok&&first) first.scrollIntoView({behavior:'smooth',block:'center'});
+  return ok;
+}
+
+$('issue').onclick=async()=>{
+  if(!validate()) return;
+  const btn=$('issue'); setBusy(btn,'発行中');
+  try{
+    const p=form(); if(S.force) p.force=true;
+    const r=await call('api_issueInvoice',p);
+    if(r.duplicate){ setBusy(btn); $('dup').classList.remove('hide'); $('dup').innerHTML=`同じ請求がもうあります: <b>${esc(r.subject)}</b> ${yen(r.total)}（${esc(r.status)}・${esc(r.id)}）<div class="row" style="margin-top:8px"><button class="btn" type="button" id="dupopen">そちらを開く</button><button class="btn" type="button" id="dupforce">別の請求として発行</button></div>`; $('dupopen').onclick=()=>{ location.href=`?id=${encodeURIComponent(r.id)}&step=preview`; }; $('dupforce').onclick=()=>{ S.force=true; $('dup').classList.add('hide'); $('issue').click(); }; window.scrollTo({top:0,behavior:'smooth'}); return; }
+    S.force=false; S.id=r.id; S.inv=r; try{ localStorage.removeItem('bill-draft'); }catch(e){}
+    history.replaceState(null,'',`?id=${encodeURIComponent(r.id)}&step=preview`);
+    setBusy(btn); showPreview(r); toast(r.card?'発行しました。LINEにカードを送りました':'発行しました');
+  }catch(e){ setBusy(btn); toast('発行できませんでした: '+(e.message||e)); }
+};
+
+function showPreview(r){
+  $('psum').innerHTML=`<div><span>宛名</span>${esc(r.to)}</div><div><span>金額（税込）</span><b>${yen(r.total)}</b></div><div><span>請求番号</span>${esc(r.id)}</div><div><span>送り方</span>${esc(r.via)}${r.via==='メール'&&r.mail?`<br><small>${esc(r.mail)}</small>`:''}</div>`;
+  const f=$('pframe'); f.srcdoc=r.html||'<p style="font-family:sans-serif;padding:20px">プレビューを作れませんでした</p>';
+  const w=$('prevwrap').clientWidth||360; const sc=w/794; f.style.transform=`scale(${sc})`; $('prevwrap').style.height=Math.round(1123*sc)+'px';
+  const sendBtn=$('send'); sendBtn.innerHTML=`<span>${r.via==='メール'?'メールで送る':'LINEで送る'}</span>`; sendBtn.dataset.l=sendBtn.innerHTML;
+  const sent=['送付済','未入金','催促中','入金済'].includes(r.status);
+  sendBtn.disabled=sent; if(sent) sendBtn.innerHTML='<span>送付済み</span>';
+  show('scrPrev');
+}
+window.addEventListener('resize',()=>{ if(!$('scrPrev').classList.contains('hide')&&S.inv) showPreview(S.inv); });
+
+$('send').onclick=()=>{
+  const r=S.inv; if(!r) return;
+  if(r.via==='メール'){
+    sheet(`<h3>メールで送ります</h3><p>invoice@melagrp.com から <b>${esc(r.mail)}</b> 宛に、請求書PDFを添えて送ります。</p><button class="btn pri" type="button" id="goSend">送信する</button><button class="btn ghost" type="button" id="noSend">やめる</button>`);
+    $('noSend').onclick=closeSheet;
+    $('goSend').onclick=async()=>{ const b=$('goSend'); setBusy(b,'送信中'); try{ const x=await call('api_sendInvoiceMail',r.id); closeSheet(); done(x.already?'送付済みでした':'送信しました',`${esc(r.to)} 様　${yen(r.total)}<br>→ ${esc(x.to)}<br>完了の通知をLINEにも送りました`); }catch(e){ setBusy(b); toast('送れませんでした: '+(e.message||e)); } };
+  } else {
+    lineShare(r);
+  }
+};
+async function lineShare(r){
+  sheet(`<h3>LINEで送ります</h3><p>請求書PDFのリンクと文面を相手のトークに送ります。</p><div id="shbody"><div class="skel"></div><div class="skel" style="width:70%"></div></div>`);
+  try{
+    const s=await call('api_lineShareText',r.id);
+    let html='';
+    if(window.liff&&liff.isInClient&&liff.isInClient()&&liff.isApiAvailable&&liff.isApiAvailable('shareTargetPicker')) html+=`<button class="btn pri" type="button" id="shPick">送る相手を選ぶ</button>`;
+    html+=`<a class="btn pri" href="https://line.me/R/share?text=${encodeURIComponent(s.text)}" id="shOpen">LINEの共有を開く</a><button class="btn" type="button" id="shCopy">文面をコピー</button><button class="btn" type="button" id="shDone">送った → 送付済にする</button><button class="btn ghost" type="button" id="shNo">やめる</button>`;
+    $('shbody').innerHTML=html;
+    $('shNo').onclick=closeSheet;
+    $('shCopy').onclick=async()=>{ try{ await navigator.clipboard.writeText(s.text); toast('コピーしました'); }catch(e){ toast('コピーできませんでした'); } };
+    const markSent=async()=>{ try{ await call('api_markLineSent',r.id); closeSheet(); done('LINEで送りました',`${esc(r.to)} 様　${yen(r.total)}<br>台帳を送付済にしました`); }catch(e){ toast('更新できませんでした: '+(e.message||e)); } };
+    $('shDone').onclick=markSent;
+    const pk=$('shPick'); if(pk) pk.onclick=async()=>{ try{ const res=await liff.shareTargetPicker([{type:'text',text:s.text}]); if(res&&res.status==='success') await markSent(); else toast('送られませんでした'); }catch(e){ toast('共有できませんでした: '+(e.message||e)); } };
+  }catch(e){ $('shbody').innerHTML=`<p style="color:var(--bad)">${esc(e.message||e)}</p><button class="btn ghost" type="button" id="shNo">閉じる</button>`; $('shNo').onclick=closeSheet; }
+}
+function done(ttl,sub){ $('dttl').textContent=ttl; $('dsub').innerHTML=sub; show('scrDone'); }
+$('dnew').onclick=()=>{ location.href=location.pathname; };
+$('edit').onclick=()=>{ show('scrForm'); history.replaceState(null,'',`?id=${encodeURIComponent(S.id)}`); };
+$('back').onclick=()=>$('edit').click();
+$('del').onclick=()=>{
+  const r=S.inv; if(!r) return;
+  sheet(`<h3>削除します</h3><p>${esc(r.to)} 様 ${yen(r.total)}（${esc(r.id)}）を台帳から消し、DriveのPDFも消します。元に戻せません。</p><button class="btn danger" type="button" id="goDel">削除する</button><button class="btn ghost" type="button" id="noDel">やめる</button>`);
+  $('noDel').onclick=closeSheet;
+  $('goDel').onclick=async()=>{ const b=$('goDel'); setBusy(b,'削除中'); try{ await call('api_deleteInvoice',r.id); closeSheet(); S.id=''; S.inv=null; history.replaceState(null,'',location.pathname); done('削除しました',`${esc(r.to)} 様　${yen(r.total)}<br>台帳の行とPDFを消しました`); }catch(e){ setBusy(b); toast('削除できませんでした: '+(e.message||e)); } };
+};
+
+(async function init(){
+  try{ const c=JSON.parse(localStorage.getItem('bill-boot')||'null'); if(c){ S.boot=c; renderBoot(); } }catch(e){}
+  if(!S.boot){ $('status').innerHTML='<div class="skel"></div><div class="skel" style="width:60%"></div>'; }
+  if(S.id){ fill({items:[{}]}); $('ttl').textContent='読み込み中…'; }
+  else { let d=null; try{ d=JSON.parse(localStorage.getItem('bill-draft')||'null'); }catch(e){} fill(d&&(d.to||d.subject||(d.items||[]).some(i=>i.name))?d:{items:[{}],due:endOfNextMonth(),date:todayIso()}); if(d&&d.recurring){ S.rec=true; $('rec').classList.add('on'); $('recopt').classList.remove('hide'); $('recuntil').value=d.recurring.until||''; } }
+  if(LIFF_ID&&window.liff){ try{ await liff.init({liffId:LIFF_ID}); }catch(e){} }
+  try{
+    const b=await call('api_billBoot'); S.boot=b; try{ localStorage.setItem('bill-boot',JSON.stringify(b)); }catch(e){}
+    const keep=form(); renderBoot(); if(keep.staff) $('staff').value=keep.staff; if(keep.accountId) $('acct').value=keep.accountId; $('status').textContent='';
+  }catch(e){ $('status').textContent='取引先の一覧を取れませんでした。入力はできます'; }
+  if(S.id){
+    try{ const inv=await call('api_getInvoice',S.id); S.inv=Object.assign({},inv,{to:inv.to,mail:inv.mail,via:inv.via,total:inv.total,html:inv.html,status:inv.status});
+      fill(inv); setEntity(inv.entityId||S.entity);
+      if(Q.get('step')==='preview'||Q.get('step')==='share'){ showPreview(S.inv); if(Q.get('step')==='share') lineShare(S.inv); } else show('scrForm');
+    }catch(e){ toast('請求を開けませんでした: '+(e.message||e)); S.id=''; show('scrForm'); }
+  }
+})();
+</script>
+</body></html>
