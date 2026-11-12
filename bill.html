@@ -130,7 +130,7 @@ button,select,input,textarea{font:inherit;color:inherit}
 <div id="scrPrev" class="hide">
   <div class="sec"><div class="sum" id="psum"></div></div>
   <div class="prev"><div class="prevwrap" id="prevwrap"><iframe id="pframe" title="請求書プレビュー"></iframe></div></div>
-  <div class="note" style="margin:10px 2px">LINEにもカードを送りました（届くまで数秒かかります）。この画面を閉じても、LINEのカードから送信できます。編集して発行し直しても請求書は1枚のままで、古いPDFは消えます。</div>
+  <div class="note" id="linenote" style="margin:10px 2px"></div>
 </div>
 
 <div id="scrDone" class="hide">
@@ -254,7 +254,7 @@ $('issue').onclick=async()=>{
     if(r.duplicate){ pg.fail(); $('dup').classList.remove('hide'); $('dup').innerHTML=`同じ請求がもうあります: <b>${esc(r.subject)}</b> ${yen(r.total)}（${esc(r.status)}・${esc(r.id)}）<div class="row" style="margin-top:8px"><button class="btn" type="button" id="dupopen">そちらを開く</button><button class="btn" type="button" id="dupforce">別の請求として発行</button></div>`; $('dupopen').onclick=()=>{ location.href=`?id=${encodeURIComponent(r.id)}&step=preview`; }; $('dupforce').onclick=()=>{ S.force=true; $('dup').classList.add('hide'); $('issue').click(); }; window.scrollTo({top:0,behavior:'smooth'}); return; }
     S.force=false; const wasEdit=!!S.id; S.id=r.id; S.inv=Object.assign(r,{updated:wasEdit}); try{ localStorage.removeItem('bill-draft'); }catch(e){}
     history.replaceState(null,'',`?id=${encodeURIComponent(r.id)}&step=preview`);
-    pg.done(); showPreview(r); toast(r.card?(wasEdit?'更新しました。LINEのカードも新しくなります（数秒で届きます）':'発行しました。LINEにカードを送りました（数秒で届きます）'):(wasEdit?'更新しました':'発行しました'));
+    pg.done(); showPreview(r); toast(wasEdit?'更新しました':'発行しました');
   }catch(e){ pg.fail(); toast('発行できませんでした: '+(e.message||e)); }
 };
 
@@ -263,6 +263,7 @@ function showPreview(r){
   const f=$('pframe'); f.srcdoc=r.html||'<p style="font-family:sans-serif;padding:20px">プレビューを作れませんでした</p>';
   const w=$('prevwrap').clientWidth||360; const sc=w/794; f.style.transform=`scale(${sc})`; $('prevwrap').style.height=Math.round(1123*sc)+'px';
   const sendBtn=$('send'); sendBtn.innerHTML=`<span>${r.via==='メール'?'メールで送る':'LINEで送る'}</span>`; sendBtn.dataset.l=sendBtn.innerHTML;
+  const ln=$('linenote'); if(ln){ ln.innerHTML = r.card ? `<b style="color:var(--ok)">LINEにカードを送信済み</b>（${esc(r.pushedAt||'')}・${r.card}人: 担当${r.staff?' '+esc(r.staff):''}と吉田）。この画面を閉じてもカードから送信できます。編集して発行し直しても請求書は1枚のままで、古いPDFは消えます。` : (r.pushedAt===undefined ? '' : '<span style="color:var(--warn)">LINEへのカード送信ができませんでした。この画面から送ってください。</span>'); }
   const sent=['送付済','未入金','催促中','入金済'].includes(r.status);
   sendBtn.disabled=sent; if(sent) sendBtn.innerHTML='<span>送付済み</span>';
   show('scrPrev');
@@ -274,7 +275,7 @@ $('send').onclick=()=>{
   if(r.via==='メール'){
     sheet(`<h3>メールで送ります</h3><p>invoice@melagrp.com から <b>${esc(r.mail)}</b> 宛に、請求書PDFを添えて送ります。</p><button class="btn pri" type="button" id="goSend">送信する</button><button class="btn ghost" type="button" id="noSend">やめる</button>`);
     $('noSend').onclick=closeSheet;
-    $('goSend').onclick=async()=>{ const b=$('goSend'); const pg=progress(b,'送信中',8); try{ const x=await call('api_sendInvoiceMail',r.id); pg.done(); closeSheet(); done(x.already?'送付済みでした':'送信しました',`${esc(r.to)} 様　${yen(r.total)}<br>→ ${esc(x.to)}<br>送信済みです。LINEにも完了の通知を出しました（数秒で届きます）`); }catch(e){ pg.fail(); toast('送れませんでした: '+(e.message||e)); } };
+    $('goSend').onclick=async()=>{ const b=$('goSend'); const pg=progress(b,'送信中',8); try{ const x=await call('api_sendInvoiceMail',r.id); pg.done(); closeSheet(); done(x.already?'送付済みでした':'送信しました',`${esc(r.to)} 様　${yen(r.total)}<br>→ ${esc(x.to)}<br>${x.pushedAt?`LINEに完了通知を送信済み（${esc(x.pushedAt)}・${x.notified}人）`:'LINE通知はありません'}`); }catch(e){ pg.fail(); toast('送れませんでした: '+(e.message||e)); } };
   } else {
     lineShare(r);
   }
