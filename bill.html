@@ -75,6 +75,7 @@ button,select,input,textarea{font:inherit;color:inherit}
 @keyframes sk{to{background-position:-200% 0}}
 .hide{display:none!important}
 .note{font-size:12.5px;color:var(--mute)}
+.sug{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.sug:empty{display:none}.sug button{border:1px solid var(--line2);background:#fff;border-radius:16px;padding:5px 11px;font-size:13px;color:var(--ink);cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sug button:active{background:var(--accbg)}
 .dup{background:var(--warnbg);border:1px solid #F0D9A8;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px}
 </style></head>
 <body>
@@ -85,13 +86,12 @@ button,select,input,textarea{font:inherit;color:inherit}
   <div id="dup" class="dup hide"></div>
   <div class="sec">
     <h2>どこに</h2>
-    <label class="f"><span>宛名</span><input class="in" id="to" list="clients" placeholder="会社名または氏名" autocomplete="off"><div class="errmsg" id="e_to">宛名を入れてください</div></label>
-    <datalist id="clients"></datalist>
-    <label class="f"><span>件名</span><input class="in" id="subject" placeholder="例: コンサルティング費（11月分）"><div class="errmsg" id="e_subject">件名を入れてください</div></label>
+    <label class="f"><span>宛名</span><input class="in" id="to" placeholder="会社名または氏名" autocomplete="off"><div class="sug" id="sug_to"></div><div class="errmsg" id="e_to">宛名を入れてください</div></label>
+    <label class="f"><span>件名</span><input class="in" id="subject" placeholder="例: コンサルティング費（11月分）" autocomplete="off"><div class="sug" id="sug_subject"></div><div class="errmsg" id="e_subject">件名を入れてください</div></label>
   </div>
 
   <div class="sec">
-    <h2>いくら（単価は税抜）</h2>
+    <div class="row" style="justify-content:space-between;margin-bottom:10px"><h2 style="margin:0">いくら</h2><div class="seg" id="taxmode" style="width:170px"><button type="button" data-v="ex" class="on">税抜で入力</button><button type="button" data-v="in">税込で入力</button></div></div>
     <div id="items"></div>
     <button class="add" id="addItem" type="button">＋ 品目を追加</button>
     <div class="errmsg" id="e_items">金額を入れてください</div>
@@ -161,14 +161,19 @@ $('sheetbg').onclick=closeSheet;
 function setBusy(btn,label){ if(label){ btn.dataset.l=btn.innerHTML; btn.classList.add('busy'); btn.innerHTML=`<span class="spin"></span><span>${esc(label)}</span>`; } else { btn.classList.remove('busy'); if(btn.dataset.l) btn.innerHTML=btn.dataset.l; } }
 function show(scr){ ['scrForm','scrPrev','scrDone'].forEach(s=>$(s).classList.toggle('hide',s!==scr)); $('barForm').classList.toggle('hide',scr!=='scrForm'); $('barPrev').classList.toggle('hide',scr!=='scrPrev'); $('back').classList.toggle('hide',scr!=='scrPrev'); $('ttl').textContent=scr==='scrForm'?(S.id?'請求書を直す':'請求する'):scr==='scrPrev'?'発行しました':'完了'; window.scrollTo(0,0); }
 
-const S={boot:null,id:Q.get('id')||'',inv:null,via:'メール',rec:false,entity:'E01'};
+const S={boot:null,id:Q.get('id')||'',inv:null,via:'メール',rec:false,entity:'E01',taxIn:false};
 const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const endOfNextMonth=()=>{ const d=new Date(); return fmt(new Date(d.getFullYear(),d.getMonth()+2,0)); };
 const todayIso=()=>fmt(new Date());
 
-function itemRow(i){ i=i||{}; const d=document.createElement('div'); d.className='item'; d.innerHTML=`<input class="in nm" placeholder="品目" value="${esc(i.name||'')}"><input class="in qt" type="number" inputmode="numeric" min="1" value="${esc(i.qty||1)}" aria-label="数量"><input class="in un" type="number" inputmode="numeric" placeholder="単価" value="${i.unit==null?'':esc(i.unit)}" aria-label="単価"><button class="x" type="button" aria-label="削除">×</button>`; d.querySelector('.x').onclick=()=>{ if($('items').children.length>1){ d.remove(); calc(); save(); } }; d.querySelectorAll('input').forEach(x=>x.oninput=()=>{ calc(); save(); clearErr(); }); $('items').appendChild(d); return d; }
-function items(){ return [...$('items').querySelectorAll('.item')].map(d=>({name:d.querySelector('.nm').value.trim(),qty:Number(d.querySelector('.qt').value||1),unit:d.querySelector('.un').value===''?null:Number(d.querySelector('.un').value)})).filter(i=>i.name||i.unit!=null); }
-function calc(){ const it=items(); const rate=Number($('tax').value)/100; const sub=it.reduce((s,i)=>s+(i.unit==null?0:i.qty*i.unit),0); const tax=Math.floor(sub*rate); $('total').textContent=yen(sub+tax); $('taxlbl').textContent=rate?`消費税${Math.round(rate*100)}% ${yen(tax)}`:'税なし'; }
+function itemRow(i){ i=i||{}; const wrap=document.createElement('div'); wrap.className='itemwrap'; const d=document.createElement('div'); d.className='item'; const shown=i.unit==null?'':(S.taxIn?toIn(i.unit):i.unit); d.innerHTML=`<input class="in nm" placeholder="品目" value="${esc(i.name||'')}" autocomplete="off"><input class="in qt" type="number" inputmode="numeric" min="1" value="${esc(i.qty||1)}" aria-label="数量"><input class="in un" type="number" inputmode="numeric" placeholder="${S.taxIn?'税込単価':'税抜単価'}" value="${esc(shown)}" aria-label="単価"><button class="x" type="button" aria-label="削除">×</button>`; wrap.appendChild(d); const sg=document.createElement('div'); sg.className='sug'; wrap.appendChild(sg); d.querySelector('.x').onclick=()=>{ if($('items').querySelectorAll('.item').length>1){ wrap.remove(); calc(); save(); } }; d.querySelectorAll('input').forEach(x=>x.oninput=()=>{ calc(); save(); clearErr(); }); const nm=d.querySelector('.nm'); nm.addEventListener('input',()=>suggest(nm,sg,()=>(S.boot&&S.boot.itemNames)||[])); nm.addEventListener('focus',()=>suggest(nm,sg,()=>(S.boot&&S.boot.itemNames)||[])); $('items').appendChild(wrap); return d; }
+const rate=()=>Number($('tax').value)/100;
+const toEx=incl=>{ const r=rate(); return r?Math.round(incl/(1+r)):Math.round(incl); };
+const toIn=ex=>{ const r=rate(); return Math.round(ex)+Math.floor(Math.round(ex)*r); };
+function suggest(input,box,src){ const v=input.value.trim(); const list=src().filter(x=>x!==v&&(!v||x.toLowerCase().includes(v.toLowerCase()))).slice(0,6); box.innerHTML=list.map(x=>`<button type="button">${esc(x)}</button>`).join(''); box.querySelectorAll('button').forEach(b=>b.onmousedown=e=>{ e.preventDefault(); input.value=b.textContent; input.dispatchEvent(new Event('input')); input.dispatchEvent(new Event('change')); box.innerHTML=''; }); }
+document.addEventListener('click',e=>{ if(!e.target.closest('.sug')&&!e.target.matches('.in')) document.querySelectorAll('.sug').forEach(b=>b.innerHTML=''); });
+function items(){ return [...$('items').querySelectorAll('.item')].map(d=>{ const raw=d.querySelector('.un').value; const u=raw===''?null:Number(raw); return {name:d.querySelector('.nm').value.trim(),qty:Number(d.querySelector('.qt').value||1),unit:u==null?null:(S.taxIn?toEx(u):u)}; }).filter(i=>i.name||i.unit!=null); }
+function calc(){ const it=items(); const r=rate(); const sub=it.reduce((s,i)=>s+(i.unit==null?0:i.qty*i.unit),0); const tax=Math.floor(sub*r); $('total').textContent=yen(sub+tax); $('taxlbl').textContent=(r?`消費税${Math.round(r*100)}% ${yen(tax)}`:'税なし')+`　税抜 ${yen(sub)}`; }
 function clearErr(){ document.querySelectorAll('.errmsg').forEach(e=>e.classList.remove('on')); document.querySelectorAll('.in.err').forEach(e=>e.classList.remove('err')); }
 function form(){ return { id:S.id||'', entityId:S.entity, to:$('to').value.trim(), subject:$('subject').value.trim(), date:$('date').value||todayIso(), due:$('due').value, items:items(), taxRate:Number($('tax').value), mail:$('mail').value.trim(), via:S.via, staff:$('staff').value, accountId:$('acct').value, note:$('note').value.trim(), recurring:S.rec?{until:$('recuntil').value?$('recuntil').value:''}:null }; }
 function save(){ if(S.id) return; try{ localStorage.setItem('bill-draft',JSON.stringify(form())); }catch(e){} }
@@ -178,14 +183,18 @@ function setEntity(id){ S.entity=id; $('ent').querySelectorAll('button').forEach
 
 function renderBoot(){
   const b=S.boot;
-  $('clients').innerHTML=b.clients.map(c=>`<option value="${esc(c.name)}">`).join('');
   $('ent').innerHTML=b.entities.map(e=>`<button type="button" data-v="${esc(e.id)}">${esc(e.short||e.name)}</button>`).join('');
   $('ent').querySelectorAll('button').forEach(x=>x.onclick=()=>{ setEntity(x.dataset.v); save(); });
   $('staff').innerHTML=b.staff.map(s=>`<option>${esc(s)}</option>`).join('');
   setEntity(S.entity);
 }
+$('to').addEventListener('input',()=>suggest($('to'),$('sug_to'),()=>(S.boot&&S.boot.clients||[]).map(c=>c.name)));
+$('to').addEventListener('focus',()=>suggest($('to'),$('sug_to'),()=>(S.boot&&S.boot.clients||[]).map(c=>c.name)));
+$('subject').addEventListener('input',()=>suggest($('subject'),$('sug_subject'),()=>(S.boot&&S.boot.subjects)||[]));
+$('subject').addEventListener('focus',()=>suggest($('subject'),$('sug_subject'),()=>(S.boot&&S.boot.subjects)||[]));
 $('to').addEventListener('change',()=>{ const c=(S.boot&&S.boot.clients||[]).find(x=>x.name===$('to').value.trim()); if(c){ if(c.mail&&!$('mail').value) $('mail').value=c.mail; if(c.via==='LINE') setVia('LINE'); if(c.staff) $('staff').value=c.staff; } save(); });
 $('via').querySelectorAll('button').forEach(b=>b.onclick=()=>{ setVia(b.dataset.v); save(); clearErr(); });
+$('taxmode').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const next=b.dataset.v==='in'; if(next===S.taxIn) return; const cur=items(); S.taxIn=next; $('taxmode').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); $('items').innerHTML=''; (cur.length?cur:[{}]).forEach(itemRow); calc(); save(); try{ localStorage.setItem('bill-taxmode',next?'in':'ex'); }catch(e){} });
 $('rec').onclick=()=>{ S.rec=!S.rec; $('rec').classList.toggle('on',S.rec); $('recopt').classList.toggle('hide',!S.rec); save(); };
 $('addItem').onclick=()=>{ itemRow().querySelector('.nm').focus(); };
 ['to','subject','due','mail','note','date','tax','staff','acct','recuntil'].forEach(id=>$(id).addEventListener('input',()=>{ save(); clearErr(); if(id==='tax') calc(); }));
@@ -277,6 +286,7 @@ $('del').onclick=()=>{
 };
 
 (async function init(){
+  try{ S.taxIn=localStorage.getItem('bill-taxmode')==='in'; $('taxmode').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.v===(S.taxIn?'in':'ex'))); }catch(e){}
   try{ const c=JSON.parse(localStorage.getItem('bill-boot')||'null'); if(c){ S.boot=c; renderBoot(); } }catch(e){}
   if(!S.boot){ $('status').innerHTML='<div class="skel"></div><div class="skel" style="width:60%"></div>'; }
   if(S.id){ fill({items:[{}]}); $('ttl').textContent='読み込み中…'; }
