@@ -74,6 +74,8 @@ button,select,input,textarea{font:inherit;color:inherit}
 .skel{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--grey) 25%,#f7f5f2 50%,var(--grey) 75%);background-size:200% 100%;animation:sk 1.2s infinite;margin:8px 0}
 @keyframes sk{to{background-position:-200% 0}}
 .hide{display:none!important}
+.pbar{position:fixed;left:0;top:0;height:3px;background:var(--acc);width:0;z-index:60;transition:width .25s linear;opacity:0}.pbar.on{opacity:1}
+.pct{font-variant-numeric:tabular-nums;min-width:3.2em;text-align:left}
 .note{font-size:12.5px;color:var(--mute)}
 .sug{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.sug:empty{display:none}.sug button{border:1px solid var(--line2);background:#fff;border-radius:16px;padding:5px 11px;font-size:13px;color:var(--ink);cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sug button:active{background:var(--accbg)}
 .dup{background:var(--warnbg);border:1px solid #F0D9A8;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px}
@@ -140,6 +142,7 @@ button,select,input,textarea{font:inherit;color:inherit}
 <div class="sheetbg" id="sheetbg"></div>
 <div class="sheet" id="sheet"><div class="grab"></div><div id="sheetbody"></div></div>
 <div class="toast" id="toast"></div>
+<div class="pbar" id="pbar"></div>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
@@ -158,6 +161,16 @@ let _t; function toast(m,undo){ const t=$('toast'); t.innerHTML=esc(m)+(undo?' <
 function sheet(html){ $('sheetbody').innerHTML=html; $('sheet').classList.add('on'); $('sheetbg').classList.add('on'); }
 function closeSheet(){ $('sheet').classList.remove('on'); $('sheetbg').classList.remove('on'); }
 $('sheetbg').onclick=closeSheet;
+/* 進み具合: 実際の処理は1回の通信なので、経験上の所要時間（発行≈14秒）から見込みの%を出し、完了で100%にする */
+function progress(btn,label,expectSec){
+  const t0=Date.now(); const bar=$('pbar'); bar.classList.add('on'); bar.style.width='2%';
+  const stages=label==='発行中'?[[0,'台帳に登録'],[30,'PDFを作成'],[70,'LINEへカード']]:[];
+  btn.dataset.l=btn.dataset.l||btn.innerHTML; btn.classList.add('busy');
+  const draw=(p,sub)=>{ const pc=Math.round(p); btn.innerHTML=`<span class="spin"></span><span>${esc(label)}</span><span class="pct">${pc}%</span>`; bar.style.width=pc+'%'; if(sub) btn.title=sub; };
+  draw(2);
+  const h=setInterval(()=>{ const t=(Date.now()-t0)/1000; const p=Math.min(94,100*(1-Math.exp(-t/(expectSec*0.55)))); const st=stages.filter(x=>x[0]<=p).pop(); draw(p,st&&st[1]); },200);
+  return { done(){ clearInterval(h); draw(100); setTimeout(()=>{ bar.classList.remove('on'); bar.style.width='0'; },400); setTimeout(()=>setBusy(btn),250); }, fail(){ clearInterval(h); bar.classList.remove('on'); bar.style.width='0'; setBusy(btn); } };
+}
 function setBusy(btn,label){ if(label){ btn.dataset.l=btn.innerHTML; btn.classList.add('busy'); btn.innerHTML=`<span class="spin"></span><span>${esc(label)}</span>`; } else { btn.classList.remove('busy'); if(btn.dataset.l) btn.innerHTML=btn.dataset.l; } }
 function show(scr){ ['scrForm','scrPrev','scrDone'].forEach(s=>$(s).classList.toggle('hide',s!==scr)); $('barForm').classList.toggle('hide',scr!=='scrForm'); $('barPrev').classList.toggle('hide',scr!=='scrPrev'); $('back').classList.toggle('hide',scr!=='scrPrev'); $('ttl').textContent=scr==='scrForm'?(S.id?'請求書を直す':'請求する'):scr==='scrPrev'?'発行しました':'完了'; window.scrollTo(0,0); }
 
@@ -227,15 +240,15 @@ function validate(){
 
 $('issue').onclick=async()=>{
   if(!validate()) return;
-  const btn=$('issue'); setBusy(btn,'発行中');
+  const btn=$('issue'); const pg=progress(btn,'発行中',14);
   try{
     const p=form(); if(S.force) p.force=true;
     const r=await call('api_issueInvoice',p);
-    if(r.duplicate){ setBusy(btn); $('dup').classList.remove('hide'); $('dup').innerHTML=`同じ請求がもうあります: <b>${esc(r.subject)}</b> ${yen(r.total)}（${esc(r.status)}・${esc(r.id)}）<div class="row" style="margin-top:8px"><button class="btn" type="button" id="dupopen">そちらを開く</button><button class="btn" type="button" id="dupforce">別の請求として発行</button></div>`; $('dupopen').onclick=()=>{ location.href=`?id=${encodeURIComponent(r.id)}&step=preview`; }; $('dupforce').onclick=()=>{ S.force=true; $('dup').classList.add('hide'); $('issue').click(); }; window.scrollTo({top:0,behavior:'smooth'}); return; }
+    if(r.duplicate){ pg.fail(); $('dup').classList.remove('hide'); $('dup').innerHTML=`同じ請求がもうあります: <b>${esc(r.subject)}</b> ${yen(r.total)}（${esc(r.status)}・${esc(r.id)}）<div class="row" style="margin-top:8px"><button class="btn" type="button" id="dupopen">そちらを開く</button><button class="btn" type="button" id="dupforce">別の請求として発行</button></div>`; $('dupopen').onclick=()=>{ location.href=`?id=${encodeURIComponent(r.id)}&step=preview`; }; $('dupforce').onclick=()=>{ S.force=true; $('dup').classList.add('hide'); $('issue').click(); }; window.scrollTo({top:0,behavior:'smooth'}); return; }
     S.force=false; S.id=r.id; S.inv=r; try{ localStorage.removeItem('bill-draft'); }catch(e){}
     history.replaceState(null,'',`?id=${encodeURIComponent(r.id)}&step=preview`);
-    setBusy(btn); showPreview(r); toast(r.card?'発行しました。LINEにカードを送りました':'発行しました');
-  }catch(e){ setBusy(btn); toast('発行できませんでした: '+(e.message||e)); }
+    pg.done(); showPreview(r); toast(r.card?'発行しました。LINEにカードを送りました':'発行しました');
+  }catch(e){ pg.fail(); toast('発行できませんでした: '+(e.message||e)); }
 };
 
 function showPreview(r){
@@ -254,7 +267,7 @@ $('send').onclick=()=>{
   if(r.via==='メール'){
     sheet(`<h3>メールで送ります</h3><p>invoice@melagrp.com から <b>${esc(r.mail)}</b> 宛に、請求書PDFを添えて送ります。</p><button class="btn pri" type="button" id="goSend">送信する</button><button class="btn ghost" type="button" id="noSend">やめる</button>`);
     $('noSend').onclick=closeSheet;
-    $('goSend').onclick=async()=>{ const b=$('goSend'); setBusy(b,'送信中'); try{ const x=await call('api_sendInvoiceMail',r.id); closeSheet(); done(x.already?'送付済みでした':'送信しました',`${esc(r.to)} 様　${yen(r.total)}<br>→ ${esc(x.to)}<br>完了の通知をLINEにも送りました`); }catch(e){ setBusy(b); toast('送れませんでした: '+(e.message||e)); } };
+    $('goSend').onclick=async()=>{ const b=$('goSend'); const pg=progress(b,'送信中',8); try{ const x=await call('api_sendInvoiceMail',r.id); pg.done(); closeSheet(); done(x.already?'送付済みでした':'送信しました',`${esc(r.to)} 様　${yen(r.total)}<br>→ ${esc(x.to)}<br>完了の通知をLINEにも送りました`); }catch(e){ pg.fail(); toast('送れませんでした: '+(e.message||e)); } };
   } else {
     lineShare(r);
   }
@@ -282,7 +295,7 @@ $('del').onclick=()=>{
   const r=S.inv; if(!r) return;
   sheet(`<h3>削除します</h3><p>${esc(r.to)} 様 ${yen(r.total)}（${esc(r.id)}）を台帳から消し、DriveのPDFも消します。元に戻せません。</p><button class="btn danger" type="button" id="goDel">削除する</button><button class="btn ghost" type="button" id="noDel">やめる</button>`);
   $('noDel').onclick=closeSheet;
-  $('goDel').onclick=async()=>{ const b=$('goDel'); setBusy(b,'削除中'); try{ await call('api_deleteInvoice',r.id); closeSheet(); S.id=''; S.inv=null; history.replaceState(null,'',location.pathname); done('削除しました',`${esc(r.to)} 様　${yen(r.total)}<br>台帳の行とPDFを消しました`); }catch(e){ setBusy(b); toast('削除できませんでした: '+(e.message||e)); } };
+  $('goDel').onclick=async()=>{ const b=$('goDel'); const pg=progress(b,'削除中',6); try{ await call('api_deleteInvoice',r.id); pg.done(); closeSheet(); S.id=''; S.inv=null; history.replaceState(null,'',location.pathname); done('削除しました',`${esc(r.to)} 様　${yen(r.total)}<br>台帳の行とPDFを消しました`); }catch(e){ pg.fail(); toast('削除できませんでした: '+(e.message||e)); } };
 };
 
 (async function init(){
