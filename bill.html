@@ -130,7 +130,7 @@ button,select,input,textarea{font:inherit;color:inherit}
 <div id="scrPrev" class="hide">
   <div class="sec"><div class="sum" id="psum"></div></div>
   <div class="prev"><div class="prevwrap" id="prevwrap"><iframe id="pframe" title="請求書プレビュー"></iframe></div></div>
-  <div class="note" style="margin:10px 2px">LINEにもカードを送りました。この画面を閉じても、LINEのカードから送信できます。</div>
+  <div class="note" style="margin:10px 2px">LINEにもカードを送りました（届くまで数秒かかります）。この画面を閉じても、LINEのカードから送信できます。編集して発行し直しても請求書は1枚のままで、古いPDFは消えます。</div>
 </div>
 
 <div id="scrDone" class="hide">
@@ -179,7 +179,7 @@ function progress(btn,label,expectSec){
 function setBusy(btn,label){ if(label){ btn.dataset.l=btn.innerHTML; btn.classList.add('busy'); btn.innerHTML=`<span class="spin"></span><span>${esc(label)}</span>`; } else { btn.classList.remove('busy'); if(btn.dataset.l) btn.innerHTML=btn.dataset.l; } }
 let _veil=null;
 function veil(ttl,expectSec){ const v=$('veil'); if(!ttl){ if(_veil){ clearInterval(_veil); _veil=null; } v.classList.remove('on'); return; } $('veilttl').textContent=ttl; $('veilsub').textContent='0%'; v.classList.add('on'); const t0=Date.now(); if(_veil) clearInterval(_veil); _veil=setInterval(()=>{ const t=(Date.now()-t0)/1000; const p=Math.min(94,100*(1-Math.exp(-t/((expectSec||6)*0.55)))); $('veilsub').textContent=Math.round(p)+'%'+(t>12?'　もう少しかかっています':''); },200); }
-function show(scr){ ['scrForm','scrPrev','scrDone'].forEach(s=>$(s).classList.toggle('hide',s!==scr)); $('barForm').classList.toggle('hide',scr!=='scrForm'); $('barPrev').classList.toggle('hide',scr!=='scrPrev'); $('back').classList.toggle('hide',scr!=='scrPrev'); $('ttl').textContent=scr==='scrForm'?(S.id?'請求書を直す':'請求する'):scr==='scrPrev'?'発行しました':'完了'; window.scrollTo(0,0); }
+function show(scr){ ['scrForm','scrPrev','scrDone'].forEach(s=>$(s).classList.toggle('hide',s!==scr)); $('barForm').classList.toggle('hide',scr!=='scrForm'); $('barPrev').classList.toggle('hide',scr!=='scrPrev'); $('back').classList.toggle('hide',scr!=='scrPrev'); $('ttl').textContent=scr==='scrForm'?(S.id?'請求書を直す':'請求する'):scr==='scrPrev'?(S.inv&&S.inv.updated?'更新しました':'発行しました'):'完了'; const ib=$('issue'); if(!ib.classList.contains('busy')){ ib.innerHTML=`<span>${S.id?'更新して発行':'発行する'}</span>`; ib.dataset.l=ib.innerHTML; } window.scrollTo(0,0); }
 
 const S={boot:null,id:Q.get('id')||'',inv:null,via:'メール',rec:false,entity:'E01',taxIn:false};
 const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -247,14 +247,14 @@ function validate(){
 
 $('issue').onclick=async()=>{
   if(!validate()) return;
-  const btn=$('issue'); const pg=progress(btn,'発行中',14);
+  const btn=$('issue'); const pg=progress(btn,S.id?'更新中':'発行中',14);
   try{
     const p=form(); if(S.force) p.force=true;
     const r=await call('api_issueInvoice',p);
     if(r.duplicate){ pg.fail(); $('dup').classList.remove('hide'); $('dup').innerHTML=`同じ請求がもうあります: <b>${esc(r.subject)}</b> ${yen(r.total)}（${esc(r.status)}・${esc(r.id)}）<div class="row" style="margin-top:8px"><button class="btn" type="button" id="dupopen">そちらを開く</button><button class="btn" type="button" id="dupforce">別の請求として発行</button></div>`; $('dupopen').onclick=()=>{ location.href=`?id=${encodeURIComponent(r.id)}&step=preview`; }; $('dupforce').onclick=()=>{ S.force=true; $('dup').classList.add('hide'); $('issue').click(); }; window.scrollTo({top:0,behavior:'smooth'}); return; }
-    S.force=false; S.id=r.id; S.inv=r; try{ localStorage.removeItem('bill-draft'); }catch(e){}
+    S.force=false; const wasEdit=!!S.id; S.id=r.id; S.inv=Object.assign(r,{updated:wasEdit}); try{ localStorage.removeItem('bill-draft'); }catch(e){}
     history.replaceState(null,'',`?id=${encodeURIComponent(r.id)}&step=preview`);
-    pg.done(); showPreview(r); toast(r.card?'発行しました。LINEにカードを送りました':'発行しました');
+    pg.done(); showPreview(r); toast(r.card?(wasEdit?'更新しました。LINEのカードも新しくなります（数秒で届きます）':'発行しました。LINEにカードを送りました（数秒で届きます）'):(wasEdit?'更新しました':'発行しました'));
   }catch(e){ pg.fail(); toast('発行できませんでした: '+(e.message||e)); }
 };
 
@@ -274,7 +274,7 @@ $('send').onclick=()=>{
   if(r.via==='メール'){
     sheet(`<h3>メールで送ります</h3><p>invoice@melagrp.com から <b>${esc(r.mail)}</b> 宛に、請求書PDFを添えて送ります。</p><button class="btn pri" type="button" id="goSend">送信する</button><button class="btn ghost" type="button" id="noSend">やめる</button>`);
     $('noSend').onclick=closeSheet;
-    $('goSend').onclick=async()=>{ const b=$('goSend'); const pg=progress(b,'送信中',8); try{ const x=await call('api_sendInvoiceMail',r.id); pg.done(); closeSheet(); done(x.already?'送付済みでした':'送信しました',`${esc(r.to)} 様　${yen(r.total)}<br>→ ${esc(x.to)}<br>完了の通知をLINEにも送りました`); }catch(e){ pg.fail(); toast('送れませんでした: '+(e.message||e)); } };
+    $('goSend').onclick=async()=>{ const b=$('goSend'); const pg=progress(b,'送信中',8); try{ const x=await call('api_sendInvoiceMail',r.id); pg.done(); closeSheet(); done(x.already?'送付済みでした':'送信しました',`${esc(r.to)} 様　${yen(r.total)}<br>→ ${esc(x.to)}<br>送信済みです。LINEにも完了の通知を出しました（数秒で届きます）`); }catch(e){ pg.fail(); toast('送れませんでした: '+(e.message||e)); } };
   } else {
     lineShare(r);
   }
