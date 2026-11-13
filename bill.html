@@ -8,7 +8,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans JP","
 button,select,input,textarea{font:inherit;color:inherit}
 .top{position:sticky;top:0;z-index:20;background:rgba(246,244,241,.92);backdrop-filter:blur(8px);padding:12px 16px 8px;display:flex;align-items:center;gap:10px}
 .top h1{font-size:18px;margin:0;flex:1}
-.top .back{border:0;background:none;color:var(--info);padding:6px 0;font-size:14px;cursor:pointer}
+.top .back{border:0;background:none;color:var(--info);padding:6px 0;font-size:14px;cursor:pointer;text-decoration:none;white-space:nowrap}
 .wrap{padding:0 16px 120px;max-width:560px;margin:0 auto}
 .sec{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 12px}
 .sec h2{font-size:13px;color:var(--mute);margin:0 0 10px;font-weight:500}
@@ -23,8 +23,8 @@ button,select,input,textarea{font:inherit;color:inherit}
 .seg button{flex:1;border:0;background:none;border-radius:8px;padding:9px 6px;font-size:14px;color:var(--ink2);cursor:pointer;transition:background .15s,color .15s}
 .seg button.on{background:#fff;color:var(--ink);font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .row{display:flex;gap:8px;align-items:center}
-.item{display:grid;grid-template-columns:22px 1fr 60px 104px 28px;gap:6px;margin-bottom:8px;align-items:center}
-.item .grip{width:22px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--mute);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;font-size:18px;letter-spacing:-2px}
+.item{display:grid;grid-template-columns:30px 1fr 56px 100px 28px;gap:6px;margin-bottom:8px;align-items:center}
+.grip{width:30px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--mute);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;font-size:20px;letter-spacing:-2px;border-radius:8px}.grip:active,.grip.on{background:var(--grey);color:var(--ink);cursor:grabbing}
 .itemwrap.drag{opacity:.55}.itemwrap.over{box-shadow:0 -2px 0 var(--acc)}
 .item .in{padding:9px 10px;font-size:15px}
 .item .x{border:0;background:none;color:var(--mute);font-size:20px;cursor:pointer;padding:0;line-height:1}
@@ -85,10 +85,10 @@ button,select,input,textarea{font:inherit;color:inherit}
 .note{font-size:12.5px;color:var(--mute)}
 .sug{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.sug:empty{display:none}.sug button{border:1px solid var(--line2);background:#fff;border-radius:16px;padding:5px 11px;font-size:13px;color:var(--ink);cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sug button:active{background:var(--accbg)}
 .sp-sec{border:1px solid var(--line);border-radius:12px;padding:10px 10px 8px;margin-bottom:10px;background:#FBFAF8}
-.sp-head{display:grid;grid-template-columns:22px 1fr 28px;gap:6px;align-items:center;margin-bottom:8px}
-.sp-row{display:grid;grid-template-columns:22px 1fr 54px 60px 86px 28px;gap:5px;align-items:center;margin-bottom:4px}
+.sp-head{display:grid;grid-template-columns:30px 1fr 28px;gap:6px;align-items:center;margin-bottom:8px}
+.sp-row{display:grid;grid-template-columns:30px 1fr 50px 58px 82px 28px;gap:5px;align-items:center;margin-bottom:4px}
 .sp-row .in,.sp-row select.in{padding:8px 8px;font-size:14px}
-.sp-spec{display:grid;grid-template-columns:22px 1fr 1fr;gap:5px;margin:0 0 8px}
+.sp-spec{display:grid;grid-template-columns:30px 1fr 1fr;gap:5px;margin:0 0 8px}
 .sp-spec .in{padding:6px 8px;font-size:12.5px;color:var(--ink2)}
 .sp-sub{display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);padding:4px 2px 0;border-top:1px dashed var(--line2);margin-top:4px}
 .sp-sub b{color:var(--ink);font-variant-numeric:tabular-nums}
@@ -104,7 +104,7 @@ button,select,input,textarea{font:inherit;color:inherit}
 .dup{background:var(--warnbg);border:1px solid #F0D9A8;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px}
 </style></head>
 <body>
-<div class="top"><button class="back hide" id="back">‹ 戻る</button><h1 id="ttl">請求する</h1></div>
+<div class="top"><a class="back" id="home" href="index.html" aria-label="ホームへ">‹ ホーム</a><button class="back hide" id="back">‹ 戻る</button><h1 id="ttl">請求する</h1><a class="back" id="listlink" href="index.html?view=bill&sub=ar" style="font-size:13px">一覧</a></div>
 <div class="wrap">
 <div class="seg" id="kind" style="margin:0 0 12px;max-width:260px"><button type="button" data-v="invoice" class="on">請求書</button><button type="button" data-v="quote">見積書</button></div>
 <div class="seg quote-only hide" id="qtype" style="margin:-4px 0 12px;max-width:260px"><button type="button" data-v="normal" class="on">通常</button><button type="button" data-v="space">空間（工事）</button></div>
@@ -126,7 +126,7 @@ button,select,input,textarea{font:inherit;color:inherit}
   <div class="sec">
     <div class="row" style="justify-content:space-between;margin-bottom:10px"><h2 style="margin:0">内容</h2><div class="seg" id="taxmode" style="width:170px"><button type="button" data-v="ex" class="on">税抜で入力</button><button type="button" data-v="in">税込で入力</button></div></div>
     <div id="normalItems"><div id="items"></div>
-    <button class="add" id="addItem" type="button">＋ 品目を追加</button>
+    <button class="add" id="addItem" type="button">＋ 品目を追加</button><div class="note" style="margin-top:6px">左の ⋮⋮ を押したまま上下に動かすと並べ替え。タップすると「上へ／下へ」が出ます</div>
     <div class="errmsg" id="e_items">金額を入れてください</div>
     <div class="total"><div>税込合計 <small id="taxlbl">消費税10%</small></div><b id="total">¥0</b></div></div>
     <div id="spaceItems" class="hide">
@@ -174,7 +174,7 @@ button,select,input,textarea{font:inherit;color:inherit}
 
 <div id="scrDone" class="hide">
   <div class="sec done"><div class="check"><svg viewBox="0 0 36 36"><path d="M8 19l7 7 13-15"/></svg></div><h2 id="dttl">送信しました</h2><p id="dsub"></p>
-    <button class="btn" id="dnew" type="button" style="margin:0 auto">続けて請求する</button></div>
+    <div class="row" style="justify-content:center;gap:8px"><button class="btn pri" id="dnew" type="button" style="flex:0 1 auto">続けて作る</button><a class="btn" href="index.html">ホームへ</a></div></div>
 </div>
 
 </div>
@@ -218,7 +218,7 @@ function progress(btn,label,expectSec){
 function setBusy(btn,label){ if(label){ btn.dataset.l=btn.innerHTML; btn.classList.add('busy'); btn.innerHTML=`<span class="spin"></span><span>${esc(label)}</span>`; } else { btn.classList.remove('busy'); if(btn.dataset.l) btn.innerHTML=btn.dataset.l; } }
 let _veil=null;
 function veil(ttl,expectSec){ const v=$('veil'); if(!ttl){ if(_veil){ clearInterval(_veil); _veil=null; } v.classList.remove('on'); return; } $('veilttl').textContent=ttl; $('veilsub').textContent='0%'; v.classList.add('on'); const t0=Date.now(); if(_veil) clearInterval(_veil); _veil=setInterval(()=>{ const t=(Date.now()-t0)/1000; const p=Math.min(94,100*(1-Math.exp(-t/((expectSec||6)*0.55)))); $('veilsub').textContent=Math.round(p)+'%'+(t>12?'　もう少しかかっています':''); },200); }
-function show(scr){ ['scrForm','scrPrev','scrDone'].forEach(s=>$(s).classList.toggle('hide',s!==scr)); $('kind').classList.toggle('hide',scr!=='scrForm'||!!S.id); $('barForm').classList.toggle('hide',scr!=='scrForm'); $('barPrev').classList.toggle('hide',scr!=='scrPrev'); $('back').classList.toggle('hide',scr!=='scrPrev'); $('ttl').textContent=scr==='scrForm'?(S.id?(isQ()?'見積書を直す':'請求書を直す'):(isQ()?'見積する':'請求する')):scr==='scrPrev'?(S.inv&&S.inv.updated?'更新しました':'発行しました'):'完了'; const ib=$('issue'); if(!ib.classList.contains('busy')){ ib.innerHTML=`<span>${S.id?(S.inv&&S.inv.status==='作成中'?'発行する':'更新して発行'):'発行する'}</span>`; ib.dataset.l=ib.innerHTML; } window.scrollTo(0,0); }
+function show(scr){ ['scrForm','scrPrev','scrDone'].forEach(s=>$(s).classList.toggle('hide',s!==scr)); $('kind').classList.toggle('hide',scr!=='scrForm'||!!S.id); $('barForm').classList.toggle('hide',scr!=='scrForm'); $('barPrev').classList.toggle('hide',scr!=='scrPrev'); $('back').classList.toggle('hide',scr!=='scrPrev'); $('home').classList.toggle('hide',scr==='scrPrev'); $('listlink').href=isQ()?'index.html?view=quote&sub=qlist':'index.html?view=bill&sub=ar'; $('ttl').textContent=scr==='scrForm'?(S.id?(isQ()?'見積書を直す':'請求書を直す'):(isQ()?'見積する':'請求する')):scr==='scrPrev'?(S.inv&&S.inv.updated?'更新しました':'発行しました'):'完了'; const ib=$('issue'); if(!ib.classList.contains('busy')){ ib.innerHTML=`<span>${S.id?(S.inv&&S.inv.status==='作成中'?'発行する':'更新して発行'):'発行する'}</span>`; ib.dataset.l=ib.innerHTML; } window.scrollTo(0,0); }
 
 const S={boot:null,id:Q.get('id')||'',inv:null,via:'メール',rec:false,entity:'E01',taxIn:false,kind:(Q.get('kind')==='quote'||/^E0\d-Q/.test(Q.get('id')||''))?'quote':'invoice'};
 const isQ=()=>S.kind==='quote';
@@ -256,7 +256,23 @@ function spCalc(){ const sp=spaceData(); const r=rate(); let direct=0; $('secs')
   $('sptot').innerHTML=`<span class="k">直接工事費</span><span class="v">${yen(direct)}</span>${ex.map(e=>`<span class="k">${esc(e.name)}${e.pct!=null?`（${e.pct}%）`:''}</span><span class="v">${yen(e.amt)}</span>`).join('')}${disc?`<span class="k">お値引き</span><span class="v">-${yen(disc)}</span>`:''}${adj?`<span class="k">端数調整</span><span class="v">${yen(adj)}</span>`:''}<span class="k">工事価格（税抜）</span><span class="v">${yen(taxable)}</span><span class="k">消費税（${Math.round(r*100)}%）</span><span class="v">${yen(tax)}</span><span class="k g">合計（税込）</span><span class="v g">${yen(taxable+tax)}</span>`; }
 function fillSpace(sp){ sp=sp||{}; const pj=sp.project||{}; $('pjname').value=pj.name||''; $('pjplace').value=pj.place||''; $('pjperiod').value=pj.period||''; if(pj.terms) $('pjterms').value=pj.terms; $('secs').innerHTML=''; (sp.sections&&sp.sections.length?sp.sections:[{}]).forEach(addSec); $('exs').innerHTML=''; (sp.extras&&sp.extras.length?sp.extras:[{name:'現場管理費',mode:'pct',value:''},{name:'諸経費',mode:'pct',value:''}]).forEach(e=>addEx(e.name,e.mode,e.value)); $('disc').value=sp.discount||''; $('round').value=String(sp.rounding==null?1000:sp.rounding); spCalc(); }
 /* 品目の並べ替え: ハンドルを押したまま上下にスライド（指・マウス両対応） */
-function bindDrag(h,wrap,container,sel){ h.addEventListener('pointerdown',e=>{ e.preventDefault(); h.setPointerCapture(e.pointerId); wrap.classList.add('drag'); const list=container||$('items'); const q=sel||'.itemwrap'; const move=ev=>{ const rows=[...list.querySelectorAll(':scope > '+q)].filter(w=>w!==wrap); rows.forEach(w=>w.classList.remove('over')); const y=ev.clientY; let target=null; for(const w of rows){ const r=w.getBoundingClientRect(); if(y<r.top+r.height/2){ target=w; break; } } if(target){ list.insertBefore(wrap,target); } else list.appendChild(wrap); }; const up=()=>{ h.removeEventListener('pointermove',move); h.removeEventListener('pointerup',up); h.removeEventListener('pointercancel',up); wrap.classList.remove('drag'); list.querySelectorAll('.over').forEach(w=>w.classList.remove('over')); save(); if(isSp()) spCalc(); }; h.addEventListener('pointermove',move); h.addEventListener('pointerup',up); h.addEventListener('pointercancel',up); }); }
+function bindDrag(h,wrap,container,sel){
+  const list=()=>container||$('items'); const q=sel||'.itemwrap';
+  const placeAt=y=>{ const L=list(); const rows=[...L.querySelectorAll(':scope > '+q)].filter(w=>w!==wrap); let target=null; for(const w of rows){ const r=w.getBoundingClientRect(); if(y<r.top+r.height/2){ target=w; break; } } if(target) L.insertBefore(wrap,target); else L.appendChild(wrap); };
+  let active=false;
+  const start=()=>{ active=true; wrap.classList.add('drag'); h.classList.add('on'); try{ navigator.vibrate&&navigator.vibrate(8); }catch(e){} };
+  const end=()=>{ if(!active) return; active=false; wrap.classList.remove('drag'); h.classList.remove('on'); save(); if(isSp()) spCalc(); toast('並べ替えました'); };
+  if(window.PointerEvent){
+    h.addEventListener('pointerdown',e=>{ e.preventDefault(); try{ h.setPointerCapture(e.pointerId); }catch(_){} start(); const move=ev=>{ if(active) placeAt(ev.clientY); }; const up=()=>{ h.removeEventListener('pointermove',move); h.removeEventListener('pointerup',up); h.removeEventListener('pointercancel',up); end(); }; h.addEventListener('pointermove',move); h.addEventListener('pointerup',up); h.addEventListener('pointercancel',up); });
+  } else {
+    h.addEventListener('touchstart',e=>{ e.preventDefault(); start(); },{passive:false});
+    h.addEventListener('touchmove',e=>{ if(!active) return; e.preventDefault(); placeAt(e.touches[0].clientY); },{passive:false});
+    h.addEventListener('touchend',end); h.addEventListener('touchcancel',end);
+    h.addEventListener('mousedown',e=>{ e.preventDefault(); start(); const mv=ev=>{ if(active) placeAt(ev.clientY); }; const up=()=>{ document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up); end(); }; document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up); });
+  }
+  /* 取りこぼし対策: ハンドルをタップしただけなら「上へ／下へ」を出す */
+  h.addEventListener('click',e=>{ const L=list(); const rows=[...L.querySelectorAll(':scope > '+q)]; const i=rows.indexOf(wrap); if(rows.length<2) return; sheet(`<h3>並べ替え</h3><p>ハンドルを押したまま上下に動かしても並べ替えられます。</p><button class="btn" type="button" id="mvUp" ${i===0?'disabled':''}>↑ ひとつ上へ</button><button class="btn" type="button" id="mvDown" ${i===rows.length-1?'disabled':''}>↓ ひとつ下へ</button><button class="btn" type="button" id="mvTop" ${i===0?'disabled':''}>先頭へ</button><button class="btn" type="button" id="mvEnd" ${i===rows.length-1?'disabled':''}>末尾へ</button><button class="btn ghost" type="button" id="mvNo">閉じる</button>`); const done=()=>{ closeSheet(); save(); if(isSp()) spCalc(); }; $('mvNo').onclick=closeSheet; $('mvUp').onclick=()=>{ L.insertBefore(wrap,rows[i-1]); done(); }; $('mvDown').onclick=()=>{ L.insertBefore(rows[i+1],wrap); done(); }; $('mvTop').onclick=()=>{ L.insertBefore(wrap,rows[0]); done(); }; $('mvEnd').onclick=()=>{ L.appendChild(wrap); done(); }; });
+}
 /* メールのチップ入力: 入力中の文字も含めて値を返す。区切りは Enter・カンマ・セミコロン・スペース */
 const EMAIL_RE=/^[^@\s,;]+@[^@\s,;]+\.[^@\s,;]+$/;
 function mailsInit(boxId,inputId){ const box=$(boxId), inp=$(inputId); const commit=()=>{ const parts=inp.value.split(/[,;\s、]+/).filter(Boolean); if(!parts.length) return; parts.forEach(v=>addTag(v)); inp.value=''; }; const addTag=v=>{ v=v.trim(); if(!v) return; if([...box.querySelectorAll('.tag')].some(t=>t.dataset.v.toLowerCase()===v.toLowerCase())) return; const t=document.createElement('span'); t.className='tag'+(EMAIL_RE.test(v)?'':' bad'); t.dataset.v=v; t.innerHTML=`<b>${esc(v)}</b><button type="button" aria-label="削除">×</button>`; t.querySelector('button').onclick=()=>{ t.remove(); save(); clearErr(); }; box.insertBefore(t,inp); }; inp.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===','||e.key===';'||e.key===' '){ e.preventDefault(); commit(); save(); } else if(e.key==='Backspace'&&!inp.value){ const last=box.querySelector('.tag:last-of-type'); if(last){ last.remove(); save(); } } }); inp.addEventListener('blur',()=>{ commit(); save(); }); inp.addEventListener('input',()=>{ if(/[,;\s、]$/.test(inp.value)){ commit(); save(); } clearErr(); }); box.addEventListener('click',e=>{ if(e.target===box) inp.focus(); }); return { get(){ const tags=[...box.querySelectorAll('.tag')].map(t=>t.dataset.v); const cur=inp.value.trim(); return tags.concat(cur?[cur]:[]); }, set(v){ box.querySelectorAll('.tag').forEach(t=>t.remove()); inp.value=''; String(v||'').split(/[,;\s、]+/).filter(Boolean).forEach(addTag); }, valid(){ return this.get().every(x=>EMAIL_RE.test(x)); } }; }
