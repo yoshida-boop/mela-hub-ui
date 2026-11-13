@@ -87,6 +87,7 @@ button,select,input,textarea{font:inherit;color:inherit}
 <body>
 <div class="top"><button class="back hide" id="back">‹ 戻る</button><h1 id="ttl">請求する</h1></div>
 <div class="wrap">
+<div class="seg" id="kind" style="margin:0 0 12px;max-width:260px"><button type="button" data-v="invoice" class="on">請求書</button><button type="button" data-v="quote">見積書</button></div>
 
 <div id="scrForm">
   <div id="dup" class="dup hide"></div>
@@ -106,12 +107,13 @@ button,select,input,textarea{font:inherit;color:inherit}
   </div>
 
   <div class="sec">
-    <h2>いつまでに・どう送る</h2>
-    <label class="f"><span>支払期日</span><input class="in" id="due" type="date"></label>
+    <h2 id="h2when">いつまでに・どう送る</h2>
+    <label class="f inv-only"><span>支払期日</span><input class="in" id="due" type="date"></label>
+    <div class="row quote-only hide"><label class="f" style="flex:1"><span>見積日</span><input class="in" id="qdate" type="date"></label><label class="f" style="flex:1"><span>有効期限</span><input class="in" id="valid" type="date"></label></div>
     <div class="f"><span>送り方</span><div class="seg" id="via"><button type="button" data-v="メール" class="on">メール</button><button type="button" data-v="LINE">LINE</button></div></div>
     <label class="f" id="mailf"><span>送付先メール</span><input class="in" id="mail" type="email" placeholder="example@company.jp" autocomplete="off"><div class="errmsg" id="e_mail">メールで送るなら宛先を入れてください</div></label>
-    <div class="tog"><div><b>毎月この内容で請求する</b><div class="note">最終週の月曜に自動で作り、LINEに届きます</div></div><button class="sw" id="rec" type="button" aria-label="毎月"><i></i></button></div>
-    <div id="recopt" class="hide" style="margin-top:8px"><label class="f"><span>いつまで（空欄なら続く限り）</span><input class="in" id="recuntil" type="month"></label></div>
+    <div class="tog inv-only"><div><b>毎月この内容で請求する</b><div class="note">最終週の月曜に自動で作り、LINEに届きます</div></div><button class="sw" id="rec" type="button" aria-label="毎月"><i></i></button></div>
+    <div id="recopt" class="hide inv-only" style="margin-top:8px"><label class="f"><span>いつまで（空欄なら続く限り）</span><input class="in" id="recuntil" type="month"></label></div>
   </div>
 
   <details class="sec" id="more"><summary style="cursor:pointer;color:var(--ink2);font-size:14px">細かい設定（発行元・担当・口座・備考）</summary>
@@ -141,7 +143,7 @@ button,select,input,textarea{font:inherit;color:inherit}
 </div>
 
 <div class="bar" id="barForm"><button class="btn ghost" id="clear" type="button">消す</button><button class="btn pri" id="issue" type="button"><span>発行する</span></button></div>
-<div class="bar hide" id="barPrev"><button class="btn" id="edit" type="button">編集</button><button class="btn danger" id="del" type="button">削除</button><button class="btn pri" id="send" type="button"><span>メールで送る</span></button></div>
+<div class="bar hide" id="barPrev"><button class="btn" id="edit" type="button">編集</button><button class="btn danger" id="del" type="button">削除</button><button class="btn hide" id="toinv" type="button">請求書にする</button><button class="btn pri" id="send" type="button"><span>メールで送る</span></button></div>
 
 <div class="sheetbg" id="sheetbg"></div>
 <div class="sheet" id="sheet"><div class="grab"></div><div id="sheetbody"></div></div>
@@ -179,9 +181,12 @@ function progress(btn,label,expectSec){
 function setBusy(btn,label){ if(label){ btn.dataset.l=btn.innerHTML; btn.classList.add('busy'); btn.innerHTML=`<span class="spin"></span><span>${esc(label)}</span>`; } else { btn.classList.remove('busy'); if(btn.dataset.l) btn.innerHTML=btn.dataset.l; } }
 let _veil=null;
 function veil(ttl,expectSec){ const v=$('veil'); if(!ttl){ if(_veil){ clearInterval(_veil); _veil=null; } v.classList.remove('on'); return; } $('veilttl').textContent=ttl; $('veilsub').textContent='0%'; v.classList.add('on'); const t0=Date.now(); if(_veil) clearInterval(_veil); _veil=setInterval(()=>{ const t=(Date.now()-t0)/1000; const p=Math.min(94,100*(1-Math.exp(-t/((expectSec||6)*0.55)))); $('veilsub').textContent=Math.round(p)+'%'+(t>12?'　もう少しかかっています':''); },200); }
-function show(scr){ ['scrForm','scrPrev','scrDone'].forEach(s=>$(s).classList.toggle('hide',s!==scr)); $('barForm').classList.toggle('hide',scr!=='scrForm'); $('barPrev').classList.toggle('hide',scr!=='scrPrev'); $('back').classList.toggle('hide',scr!=='scrPrev'); $('ttl').textContent=scr==='scrForm'?(S.id?'請求書を直す':'請求する'):scr==='scrPrev'?(S.inv&&S.inv.updated?'更新しました':'発行しました'):'完了'; const ib=$('issue'); if(!ib.classList.contains('busy')){ ib.innerHTML=`<span>${S.id?'更新して発行':'発行する'}</span>`; ib.dataset.l=ib.innerHTML; } window.scrollTo(0,0); }
+function show(scr){ ['scrForm','scrPrev','scrDone'].forEach(s=>$(s).classList.toggle('hide',s!==scr)); $('kind').classList.toggle('hide',scr!=='scrForm'||!!S.id); $('barForm').classList.toggle('hide',scr!=='scrForm'); $('barPrev').classList.toggle('hide',scr!=='scrPrev'); $('back').classList.toggle('hide',scr!=='scrPrev'); $('ttl').textContent=scr==='scrForm'?(S.id?(isQ()?'見積書を直す':'請求書を直す'):(isQ()?'見積する':'請求する')):scr==='scrPrev'?(S.inv&&S.inv.updated?'更新しました':'発行しました'):'完了'; const ib=$('issue'); if(!ib.classList.contains('busy')){ ib.innerHTML=`<span>${S.id?'更新して発行':'発行する'}</span>`; ib.dataset.l=ib.innerHTML; } window.scrollTo(0,0); }
 
-const S={boot:null,id:Q.get('id')||'',inv:null,via:'メール',rec:false,entity:'E01',taxIn:false};
+const S={boot:null,id:Q.get('id')||'',inv:null,via:'メール',rec:false,entity:'E01',taxIn:false,kind:(Q.get('kind')==='quote'||/^E0\d-Q/.test(Q.get('id')||''))?'quote':'invoice'};
+const isQ=()=>S.kind==='quote';
+const plus30=()=>{ const d=new Date(); d.setDate(d.getDate()+30); return fmt(d); };
+function setKind(k){ S.kind=k; $('kind').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===k)); document.querySelectorAll('.inv-only').forEach(e=>e.classList.toggle('hide',k==='quote')); document.querySelectorAll('.quote-only').forEach(e=>e.classList.toggle('hide',k!=='quote')); $('h2when').textContent=k==='quote'?'いつまで有効・どう送る':'いつまでに・どう送る'; if(k==='quote'){ if(!$('qdate').value) $('qdate').value=todayIso(); if(!$('valid').value) $('valid').value=plus30(); } $('subject').placeholder=k==='quote'?'例: Webサイト制作一式':'例: コンサルティング費（11月分）'; if(!S.id){ $('ttl').textContent=k==='quote'?'見積する':'請求する'; const ib=$('issue'); if(!ib.classList.contains('busy')){ ib.innerHTML='<span>発行する</span>'; ib.dataset.l=ib.innerHTML; } } }
 const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const endOfNextMonth=()=>{ const d=new Date(); return fmt(new Date(d.getFullYear(),d.getMonth()+2,0)); };
 const todayIso=()=>fmt(new Date());
@@ -195,9 +200,9 @@ document.addEventListener('click',e=>{ if(!e.target.closest('.sug')&&!e.target.m
 function items(){ return [...$('items').querySelectorAll('.item')].map(d=>{ const raw=d.querySelector('.un').value; const u=raw===''?null:Number(raw); return {name:d.querySelector('.nm').value.trim(),qty:Number(d.querySelector('.qt').value||1),unit:u==null?null:(S.taxIn?toEx(u):u)}; }).filter(i=>i.name||i.unit!=null); }
 function calc(){ const it=items(); const r=rate(); const sub=it.reduce((s,i)=>s+(i.unit==null?0:i.qty*i.unit),0); const tax=Math.floor(sub*r); $('total').textContent=yen(sub+tax); $('taxlbl').textContent=(r?`消費税${Math.round(r*100)}% ${yen(tax)}`:'税なし')+`　税抜 ${yen(sub)}`; }
 function clearErr(){ document.querySelectorAll('.errmsg').forEach(e=>e.classList.remove('on')); document.querySelectorAll('.in.err').forEach(e=>e.classList.remove('err')); }
-function form(){ return { id:S.id||'', entityId:S.entity, to:$('to').value.trim(), subject:$('subject').value.trim(), date:$('date').value||todayIso(), due:$('due').value, items:items(), taxRate:Number($('tax').value), mail:$('mail').value.trim(), via:S.via, staff:$('staff').value, accountId:$('acct').value, note:$('note').value.trim(), recurring:S.rec?{until:$('recuntil').value?$('recuntil').value:''}:null }; }
-function save(){ if(S.id) return; try{ localStorage.setItem('bill-draft',JSON.stringify(form())); }catch(e){} }
-function fill(p){ $('to').value=p.to||''; $('subject').value=p.subject||''; $('items').innerHTML=''; (p.items&&p.items.length?p.items:[{}]).forEach(itemRow); $('due').value=p.due||''; $('mail').value=p.mail||''; setVia(p.via||'メール'); $('note').value=p.note||''; if(p.date) $('date').value=p.date; if(p.taxRate!=null) $('tax').value=String(p.taxRate); if(p.staff) $('staff').value=p.staff; if(p.entityId) setEntity(p.entityId); if(p.accountId){ if(![...$('acct').options].some(o=>o.value===p.accountId)){ const a=(S.boot&&S.boot.accounts||[]).find(x=>x.id===p.accountId); $('acct').insertAdjacentHTML('beforeend',`<option value="${esc(p.accountId)}">${esc(a?a.label+'（'+a.name+'）':p.accountId)}</option>`); } $('acct').value=p.accountId; } S.acct=p.accountId||S.acct||''; calc(); }
+function form(){ const f={ id:S.id||'', kind:S.kind, entityId:S.entity, to:$('to').value.trim(), subject:$('subject').value.trim(), date:(isQ()?$('qdate').value:$('date').value)||todayIso(), due:$('due').value, valid:$('valid').value, items:items(), taxRate:Number($('tax').value), mail:$('mail').value.trim(), via:S.via, staff:$('staff').value, accountId:$('acct').value, note:$('note').value.trim(), recurring:(!isQ()&&S.rec)?{until:$('recuntil').value?$('recuntil').value:''}:null }; return f; }
+function save(){ if(S.id) return; try{ localStorage.setItem('bill-draft-'+S.kind,JSON.stringify(form())); }catch(e){} }
+function fill(p){ if(p.kind) setKind(p.kind); $('to').value=p.to||''; $('subject').value=p.subject||''; if(p.valid!==undefined) $('valid').value=p.valid||''; if(isQ()&&p.date) $('qdate').value=p.date; $('items').innerHTML=''; (p.items&&p.items.length?p.items:[{}]).forEach(itemRow); $('due').value=p.due||''; $('mail').value=p.mail||''; setVia(p.via||'メール'); $('note').value=p.note||''; if(p.date) $('date').value=p.date; if(p.taxRate!=null) $('tax').value=String(p.taxRate); if(p.staff) $('staff').value=p.staff; if(p.entityId) setEntity(p.entityId); if(p.accountId){ if(![...$('acct').options].some(o=>o.value===p.accountId)){ const a=(S.boot&&S.boot.accounts||[]).find(x=>x.id===p.accountId); $('acct').insertAdjacentHTML('beforeend',`<option value="${esc(p.accountId)}">${esc(a?a.label+'（'+a.name+'）':p.accountId)}</option>`); } $('acct').value=p.accountId; } S.acct=p.accountId||S.acct||''; calc(); }
 function setVia(v){ S.via=v; $('via').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); $('mailf').classList.toggle('hide',v!=='メール'); }
 function setEntity(id){ const prev=$('acct').value; S.entity=id; $('ent').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===id)); const sel=$('acct'); const list=(S.boot&&S.boot.accounts||[]).filter(a=>a.entity===id); sel.innerHTML=list.map(a=>`<option value="${esc(a.id)}">${esc(a.label)}（${esc(a.name)}）</option>`).join(''); if(list.some(a=>a.id===prev)) sel.value=prev; }
 
@@ -214,11 +219,12 @@ $('subject').addEventListener('input',()=>suggest($('subject'),$('sug_subject'),
 $('subject').addEventListener('focus',()=>suggest($('subject'),$('sug_subject'),()=>(S.boot&&S.boot.subjects)||[]));
 $('to').addEventListener('change',()=>{ const c=(S.boot&&S.boot.clients||[]).find(x=>x.name===$('to').value.trim()); if(c){ if(c.mail&&!$('mail').value) $('mail').value=c.mail; if(c.via==='LINE') setVia('LINE'); if(c.staff) $('staff').value=c.staff; } save(); });
 $('via').querySelectorAll('button').forEach(b=>b.onclick=()=>{ setVia(b.dataset.v); save(); clearErr(); });
+$('kind').querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(S.id){ location.href=location.pathname+'?kind='+b.dataset.v; return; } const cur=form(); setKind(b.dataset.v); let d=null; try{ d=JSON.parse(localStorage.getItem('bill-draft-'+S.kind)||'null'); }catch(e){} if(d&&(d.to||d.subject||(d.items||[]).some(i=>i.name))){ fill(d); } else { fill(Object.assign(cur,{kind:S.kind,id:''})); } history.replaceState(null,'',location.pathname+(S.kind==='quote'?'?kind=quote':'')); });
 $('taxmode').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const next=b.dataset.v==='in'; if(next===S.taxIn) return; const cur=items(); S.taxIn=next; $('taxmode').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); $('items').innerHTML=''; (cur.length?cur:[{}]).forEach(itemRow); calc(); save(); try{ localStorage.setItem('bill-taxmode',next?'in':'ex'); }catch(e){} });
 $('rec').onclick=()=>{ S.rec=!S.rec; $('rec').classList.toggle('on',S.rec); $('recopt').classList.toggle('hide',!S.rec); save(); };
 $('addItem').onclick=()=>{ itemRow().querySelector('.nm').focus(); };
 ['to','subject','due','mail','note','date','tax','staff','acct','recuntil'].forEach(id=>$(id).addEventListener('input',()=>{ save(); clearErr(); if(id==='tax') calc(); }));
-$('clear').onclick=()=>{ const prev=form(); fill({items:[{}],due:endOfNextMonth(),date:todayIso()}); try{ localStorage.removeItem('bill-draft'); }catch(e){} toast('消しました',()=>{ fill(prev); save(); }); };
+$('clear').onclick=()=>{ const prev=form(); fill({items:[{}],due:endOfNextMonth(),date:todayIso(),valid:plus30()}); try{ localStorage.removeItem('bill-draft-'+S.kind); }catch(e){} toast('消しました',()=>{ fill(prev); save(); }); };
 
 $('photo').onchange=async()=>{
   const files=[...$('photo').files].slice(0,4); if(!files.length) return;
@@ -250,21 +256,22 @@ $('issue').onclick=async()=>{
   const btn=$('issue'); const pg=progress(btn,S.id?'更新中':'発行中',14);
   try{
     const p=form(); if(S.force) p.force=true;
-    const r=await call('api_issueInvoice',p);
+    const r=await call(isQ()?'api_issueQuote':'api_issueInvoice',p);
     if(r.duplicate){ pg.fail(); $('dup').classList.remove('hide'); $('dup').innerHTML=`同じ請求がもうあります: <b>${esc(r.subject)}</b> ${yen(r.total)}（${esc(r.status)}・${esc(r.id)}）<div class="row" style="margin-top:8px"><button class="btn" type="button" id="dupopen">そちらを開く</button><button class="btn" type="button" id="dupforce">別の請求として発行</button></div>`; $('dupopen').onclick=()=>{ location.href=`?id=${encodeURIComponent(r.id)}&step=preview`; }; $('dupforce').onclick=()=>{ S.force=true; $('dup').classList.add('hide'); $('issue').click(); }; window.scrollTo({top:0,behavior:'smooth'}); return; }
-    S.force=false; const wasEdit=!!S.id; S.id=r.id; S.inv=Object.assign(r,{updated:wasEdit}); try{ localStorage.removeItem('bill-draft'); }catch(e){}
+    S.force=false; const wasEdit=!!S.id; S.id=r.id; S.inv=Object.assign(r,{updated:wasEdit}); try{ localStorage.removeItem('bill-draft-'+S.kind); }catch(e){}
     history.replaceState(null,'',`?id=${encodeURIComponent(r.id)}&step=preview`);
     pg.done(); showPreview(r); toast(wasEdit?'更新しました':'発行しました');
   }catch(e){ pg.fail(); toast('発行できませんでした: '+(e.message||e)); }
 };
 
 function showPreview(r){
-  const acc=(S.boot&&S.boot.accounts||[]).find(a=>a.id===(r.accountId||$('acct').value)); $('psum').innerHTML=`<div><span>宛名</span>${esc(r.to)}</div><div><span>金額（税込）</span><b>${yen(r.total)}</b></div><div><span>請求番号</span>${esc(r.id)}</div><div><span>送り方</span>${esc(r.via)}${r.via==='メール'&&r.mail?`<br><small>${esc(r.mail)}</small>`:''}</div><div style="grid-column:1/-1"><span>振込先</span>${acc?esc(acc.label+'　'+acc.name):'—'}</div>`;
+  const acc=(S.boot&&S.boot.accounts||[]).find(a=>a.id===(r.accountId||$('acct').value)); $('psum').innerHTML=`<div><span>宛名</span>${esc(r.to)}</div><div><span>金額（税込）</span><b>${yen(r.total)}</b></div><div><span>${isQ()?'見積番号':'請求番号'}</span>${esc(r.id)}</div><div><span>送り方</span>${esc(r.via)}${r.via==='メール'&&r.mail?`<br><small>${esc(r.mail)}</small>`:''}</div><div style="grid-column:1/-1"><span>振込先</span>${acc?esc(acc.label+'　'+acc.name):'—'}</div>`;
   const f=$('pframe'); f.srcdoc=r.html||'<p style="font-family:sans-serif;padding:20px">プレビューを作れませんでした</p>';
   const w=$('prevwrap').clientWidth||360; const sc=w/794; f.style.transform=`scale(${sc})`; $('prevwrap').style.height=Math.round(1123*sc)+'px';
   const sendBtn=$('send'); sendBtn.innerHTML=`<span>${r.via==='メール'?'メールで送る':'LINEで送る'}</span>`; sendBtn.dataset.l=sendBtn.innerHTML;
-  const ln=$('linenote'); if(ln){ ln.innerHTML = r.card ? `<b style="color:var(--ok)">LINEにカードを送信済み</b>（${esc(r.pushedAt||'')}・${r.card}人: 担当${r.staff?' '+esc(r.staff):''}と吉田）。この画面を閉じてもカードから送信できます。編集して発行し直しても請求書は1枚のままで、古いPDFは消えます。` : (r.pushedAt===undefined ? '' : '<span style="color:var(--warn)">LINEへのカード送信ができませんでした。この画面から送ってください。</span>'); }
-  const sent=['送付済','未入金','催促中','入金済'].includes(r.status);
+  $('toinv').classList.toggle('hide',!isQ()); if(isQ()&&r.invoiceId){ $('toinv').textContent='請求書 '+r.invoiceId+' を開く'; } else if(isQ()) $('toinv').textContent='請求書にする';
+  const ln=$('linenote'); if(ln){ if(isQ()){ ln.innerHTML=`見積書を発行しました${r.valid?`（有効期限 ${esc(r.valid)}）`:''}。受注したら「請求書にする」で同じ内容の請求書を作れます。`; } else ln.innerHTML = r.card ? `<b style="color:var(--ok)">LINEにカードを送信済み</b>（${esc(r.pushedAt||'')}・${r.card}人: 担当${r.staff?' '+esc(r.staff):''}と吉田）。この画面を閉じてもカードから送信できます。編集して発行し直しても請求書は1枚のままで、古いPDFは消えます。` : (r.pushedAt===undefined ? '' : '<span style="color:var(--warn)">LINEへのカード送信ができませんでした。この画面から送ってください。</span>'); }
+  const sent=isQ()?false:['送付済','未入金','催促中','入金済'].includes(r.status);
   sendBtn.disabled=sent; if(sent) sendBtn.innerHTML='<span>送付済み</span>';
   show('scrPrev');
 }
@@ -273,52 +280,57 @@ window.addEventListener('resize',()=>{ if(!$('scrPrev').classList.contains('hide
 $('send').onclick=()=>{
   const r=S.inv; if(!r) return;
   if(r.via==='メール'){
-    sheet(`<h3>メールで送ります</h3><p>invoice@melagrp.com から <b>${esc(r.mail)}</b> 宛に、請求書PDFを添えて送ります。</p><button class="btn pri" type="button" id="goSend">送信する</button><button class="btn ghost" type="button" id="noSend">やめる</button>`);
+    sheet(`<h3>メールで送ります</h3><p>invoice@melagrp.com から <b>${esc(r.mail)}</b> 宛に、${isQ()?'見積書':'請求書'}PDFを添えて送ります。</p><button class="btn pri" type="button" id="goSend">送信する</button><button class="btn ghost" type="button" id="noSend">やめる</button>`);
     $('noSend').onclick=closeSheet;
-    $('goSend').onclick=async()=>{ const b=$('goSend'); const pg=progress(b,'送信中',8); try{ const x=await call('api_sendInvoiceMail',r.id); pg.done(); closeSheet(); done(x.already?'送付済みでした':'送信しました',`${esc(r.to)} 様　${yen(r.total)}<br>→ ${esc(x.to)}<br>${x.pushedAt?`LINEに完了通知を送信済み（${esc(x.pushedAt)}・${x.notified}人）`:'LINE通知はありません'}`); }catch(e){ pg.fail(); toast('送れませんでした: '+(e.message||e)); } };
+    $('goSend').onclick=async()=>{ const b=$('goSend'); const pg=progress(b,'送信中',8); try{ const x=await call(isQ()?'api_sendQuoteMail':'api_sendInvoiceMail',r.id); pg.done(); closeSheet(); done(x.already?'送付済みでした':'送信しました',`${esc(r.to)} 様　${yen(r.total)}<br>→ ${esc(x.to)}<br>${x.pushedAt?`LINEに完了通知を送信済み（${esc(x.pushedAt)}・${x.notified}人）`:'LINE通知はありません'}`); }catch(e){ pg.fail(); toast('送れませんでした: '+(e.message||e)); } };
   } else {
     lineShare(r);
   }
 };
 async function lineShare(r){
-  sheet(`<h3>LINEで送ります</h3><p>請求書PDFのリンクと文面を相手のトークに送ります。</p><div id="shbody"><div class="skel"></div><div class="skel" style="width:70%"></div></div>`);
+  sheet(`<h3>LINEで送ります</h3><p>${isQ()?'見積書':'請求書'}PDFのリンクと文面を相手のトークに送ります。</p><div id="shbody"><div class="skel"></div><div class="skel" style="width:70%"></div></div>`);
   try{
-    const s=await call('api_lineShareText',r.id);
+    const s=await call(isQ()?'api_quoteShareText':'api_lineShareText',r.id);
     let html='';
     if(window.liff&&liff.isInClient&&liff.isInClient()&&liff.isApiAvailable&&liff.isApiAvailable('shareTargetPicker')) html+=`<button class="btn pri" type="button" id="shPick">送る相手を選ぶ</button>`;
     html+=`<a class="btn pri" href="https://line.me/R/share?text=${encodeURIComponent(s.text)}" id="shOpen">LINEの共有を開く</a><button class="btn" type="button" id="shCopy">文面をコピー</button><button class="btn" type="button" id="shDone">送った → 送付済にする</button><button class="btn ghost" type="button" id="shNo">やめる</button>`;
     $('shbody').innerHTML=html;
     $('shNo').onclick=closeSheet;
     $('shCopy').onclick=async()=>{ try{ await navigator.clipboard.writeText(s.text); toast('コピーしました'); }catch(e){ toast('コピーできませんでした'); } };
-    const markSent=async()=>{ try{ await call('api_markLineSent',r.id); closeSheet(); done('LINEで送りました',`${esc(r.to)} 様　${yen(r.total)}<br>台帳を送付済にしました`); }catch(e){ toast('更新できませんでした: '+(e.message||e)); } };
+    const markSent=async()=>{ try{ await call(isQ()?'api_markQuoteLineSent':'api_markLineSent',r.id); closeSheet(); done('LINEで送りました',`${esc(r.to)} 様　${yen(r.total)}<br>台帳を送付済にしました`); }catch(e){ toast('更新できませんでした: '+(e.message||e)); } };
     $('shDone').onclick=markSent;
     const pk=$('shPick'); if(pk) pk.onclick=async()=>{ try{ const res=await liff.shareTargetPicker([{type:'text',text:s.text}]); if(res&&res.status==='success') await markSent(); else toast('送られませんでした'); }catch(e){ toast('共有できませんでした: '+(e.message||e)); } };
   }catch(e){ $('shbody').innerHTML=`<p style="color:var(--bad)">${esc(e.message||e)}</p><button class="btn ghost" type="button" id="shNo">閉じる</button>`; $('shNo').onclick=closeSheet; }
 }
 function done(ttl,sub){ $('dttl').textContent=ttl; $('dsub').innerHTML=sub; show('scrDone'); }
-$('dnew').onclick=()=>{ location.href=location.pathname; };
+$('dnew').onclick=()=>{ location.href=location.pathname+(isQ()?'?kind=quote':''); };
+$('toinv').onclick=async()=>{ const r=S.inv; if(!r) return; if(r.invoiceId){ location.href=location.pathname+'?id='+encodeURIComponent(r.invoiceId)+'&step=preview'; return; }
+  sheet(`<h3>この見積から請求書を作ります</h3><p>${esc(r.to)} 様 ${yen(r.total)} の内容で請求書を作り、見積は「受注」になります。</p><button class="btn pri" type="button" id="goInv">請求書を作る</button><button class="btn ghost" type="button" id="noInv">やめる</button>`);
+  $('noInv').onclick=closeSheet;
+  $('goInv').onclick=async()=>{ const b=$('goInv'); const pg=progress(b,'作成中',8); try{ const x=await call('api_quoteToInvoice',r.id,{}); pg.done(); closeSheet(); location.href=location.pathname+'?id='+encodeURIComponent(x.id); }catch(e){ pg.fail(); toast('作れませんでした: '+(e.message||e)); } }; };
 $('edit').onclick=()=>{ show('scrForm'); history.replaceState(null,'',`?id=${encodeURIComponent(S.id)}`); };
 $('back').onclick=()=>$('edit').click();
 $('del').onclick=()=>{
   const r=S.inv; if(!r) return;
   sheet(`<h3>削除します</h3><p>${esc(r.to)} 様 ${yen(r.total)}（${esc(r.id)}）を台帳から消し、DriveのPDFも消します。元に戻せません。</p><button class="btn danger" type="button" id="goDel">削除する</button><button class="btn ghost" type="button" id="noDel">やめる</button>`);
   $('noDel').onclick=closeSheet;
-  $('goDel').onclick=async()=>{ const b=$('goDel'); const pg=progress(b,'削除中',6); try{ await call('api_deleteInvoice',r.id); pg.done(); closeSheet(); S.id=''; S.inv=null; history.replaceState(null,'',location.pathname); done('削除しました',`${esc(r.to)} 様　${yen(r.total)}<br>台帳の行とPDFを消しました`); }catch(e){ pg.fail(); toast('削除できませんでした: '+(e.message||e)); } };
+  $('goDel').onclick=async()=>{ const b=$('goDel'); const pg=progress(b,'削除中',6); try{ await call(isQ()?'api_deleteQuote':'api_deleteInvoice',r.id); pg.done(); closeSheet(); S.id=''; S.inv=null; history.replaceState(null,'',location.pathname); done('削除しました',`${esc(r.to)} 様　${yen(r.total)}<br>台帳の行とPDFを消しました`); }catch(e){ pg.fail(); toast('削除できませんでした: '+(e.message||e)); } };
 };
 
 (async function init(){
   try{ S.taxIn=localStorage.getItem('bill-taxmode')==='in'; $('taxmode').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.v===(S.taxIn?'in':'ex'))); }catch(e){}
   try{ const c=JSON.parse(localStorage.getItem('bill-boot')||'null'); if(c){ S.boot=c; renderBoot(); } }catch(e){}
   if(!S.boot){ $('status').innerHTML='<div class="skel"></div><div class="skel" style="width:60%"></div>'; }
-  if(S.id){ fill({items:[{}]}); $('ttl').textContent='請求書'; veil('請求書を読み込んでいます',6); }
-  else { let d=null; try{ d=JSON.parse(localStorage.getItem('bill-draft')||'null'); }catch(e){} fill(d&&(d.to||d.subject||(d.items||[]).some(i=>i.name))?d:{items:[{}],due:endOfNextMonth(),date:todayIso()}); if(d&&d.recurring){ S.rec=true; $('rec').classList.add('on'); $('recopt').classList.remove('hide'); $('recuntil').value=d.recurring.until||''; } }
+  setKind(S.kind);
+  if(S.id){ fill({items:[{}]}); $('ttl').textContent=isQ()?'見積書':'請求書'; veil((isQ()?'見積書':'請求書')+'を読み込んでいます',6); }
+  else { let d=null; try{ d=JSON.parse(localStorage.getItem('bill-draft-'+S.kind)||'null'); }catch(e){} fill(d&&(d.to||d.subject||(d.items||[]).some(i=>i.name))?Object.assign(d,{kind:S.kind}):{items:[{}],due:endOfNextMonth(),date:todayIso(),valid:plus30()}); if(d&&d.recurring){ S.rec=true; $('rec').classList.add('on'); $('recopt').classList.remove('hide'); $('recuntil').value=d.recurring.until||''; } }
   if(LIFF_ID&&window.liff){ try{ await liff.init({liffId:LIFF_ID}); }catch(e){} }
   const bootP=call('api_billBoot').then(b=>{ S.boot=b; try{ localStorage.setItem('bill-boot',JSON.stringify(b)); }catch(e){} const keep=form(); renderBoot(); if(keep.entityId) setEntity(keep.entityId); if(keep.staff) $('staff').value=keep.staff; if(keep.accountId) $('acct').value=keep.accountId; $('status').textContent=''; }).catch(e=>{ $('status').textContent='取引先の一覧を取れませんでした。入力はできます'; });
   if(!S.id) await bootP;
   if(S.id){
-    const invP=call('api_getInvoice',S.id); await bootP;
+    const invP=call(isQ()?'api_getQuote':'api_getInvoice',S.id); await bootP;
     try{ const inv=await invP; S.inv=Object.assign({},inv,{to:inv.to,mail:inv.mail,via:inv.via,total:inv.total,html:inv.html,status:inv.status});
-      fill(inv);
+      fill(Object.assign({kind:S.kind},inv));
       veil(null);
       if(Q.get('step')==='preview'||Q.get('step')==='share'){ showPreview(S.inv); if(Q.get('step')==='share') lineShare(S.inv); } else show('scrForm');
     }catch(e){ veil(null); toast('請求を開けませんでした: '+(e.message||e)); S.id=''; show('scrForm'); }
