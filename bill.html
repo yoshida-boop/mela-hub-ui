@@ -96,6 +96,10 @@ button,select,input,textarea{font:inherit;color:inherit}
 .sp-tot{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:13.5px;padding-top:8px;border-top:1px solid var(--line);margin-top:8px}
 .sp-tot .k{color:var(--ink2)}.sp-tot .v{text-align:right;font-variant-numeric:tabular-nums}.sp-tot .g{font-weight:700;font-size:18px}
 .x2{border:0;background:none;color:var(--mute);font-size:20px;cursor:pointer;padding:0;line-height:1}
+.mails{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--line2);border-radius:10px;padding:6px 8px;background:#fff;min-height:46px}.mails:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px var(--accbg)}.mails.err{border-color:var(--bad);box-shadow:0 0 0 3px var(--badbg)}
+.mails .tag{display:inline-flex;align-items:center;gap:4px;background:var(--grey);border-radius:14px;padding:4px 8px 4px 10px;font-size:13px;max-width:100%}.mails .tag.bad{background:var(--badbg);color:var(--bad)}.mails .tag b{font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mails .tag button{border:0;background:none;color:inherit;font-size:15px;line-height:1;padding:0 2px;cursor:pointer}
+.mails input{border:0;outline:0;flex:1;min-width:140px;font-size:16px;padding:4px 2px;background:none}
+.cclink{border:0;background:none;color:var(--info);font-size:13px;padding:4px 0;cursor:pointer}
 .dup{background:var(--warnbg);border:1px solid #F0D9A8;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px}
 </style></head>
 <body>
@@ -140,7 +144,9 @@ button,select,input,textarea{font:inherit;color:inherit}
     <label class="f inv-only"><span>支払期日</span><input class="in" id="due" type="date"></label>
     <div class="row quote-only hide"><label class="f" style="flex:1"><span>見積日</span><input class="in" id="qdate" type="date"></label><label class="f" style="flex:1"><span>有効期限</span><input class="in" id="valid" type="date"></label></div>
     <div class="f"><span>送り方</span><div class="seg" id="via"><button type="button" data-v="メール" class="on">メール</button><button type="button" data-v="LINE">LINE</button></div></div>
-    <label class="f" id="mailf"><span>送付先メール</span><input class="in" id="mail" type="email" placeholder="example@company.jp" autocomplete="off"><div class="errmsg" id="e_mail">メールで送るなら宛先を入れてください</div></label>
+    <div class="f" id="mailf"><span>送付先メール（複数可。Enter・カンマ・スペースで区切り）</span><div class="mails" id="mailbox"><input id="mail" type="email" inputmode="email" placeholder="example@company.jp" autocomplete="off" autocapitalize="off"></div><div class="errmsg" id="e_mail">メールで送るなら宛先を正しく入れてください</div>
+      <button type="button" class="cclink" id="ccshow">＋ CC を追加</button>
+      <div id="ccf" class="hide"><span style="display:block;font-size:12.5px;color:var(--ink2);margin:6px 0 4px">CC（invoice@ は自動で入ります）</span><div class="mails" id="ccbox"><input id="cc" type="email" inputmode="email" placeholder="cc@company.jp" autocomplete="off" autocapitalize="off"></div></div></div>
     <div class="tog inv-only"><div><b>毎月この内容で請求する</b><div class="note">最終週の月曜に自動で作り、LINEに届きます</div></div><button class="sw" id="rec" type="button" aria-label="毎月"><i></i></button></div>
     <div id="recopt" class="hide inv-only" style="margin-top:8px"><label class="f"><span>いつまで（空欄なら続く限り）</span><input class="in" id="recuntil" type="month"></label></div>
   </div>
@@ -248,6 +254,11 @@ function spCalc(){ const sp=spaceData(); const r=rate(); let direct=0; $('secs')
 function fillSpace(sp){ sp=sp||{}; const pj=sp.project||{}; $('pjname').value=pj.name||''; $('pjplace').value=pj.place||''; $('pjperiod').value=pj.period||''; if(pj.terms) $('pjterms').value=pj.terms; $('secs').innerHTML=''; (sp.sections&&sp.sections.length?sp.sections:[{}]).forEach(addSec); $('exs').innerHTML=''; (sp.extras&&sp.extras.length?sp.extras:[{name:'現場管理費',mode:'pct',value:''},{name:'諸経費',mode:'pct',value:''}]).forEach(e=>addEx(e.name,e.mode,e.value)); $('disc').value=sp.discount||''; $('round').value=String(sp.rounding==null?1000:sp.rounding); spCalc(); }
 /* 品目の並べ替え: ハンドルを押したまま上下にスライド（指・マウス両対応） */
 function bindDrag(h,wrap,container,sel){ h.addEventListener('pointerdown',e=>{ e.preventDefault(); h.setPointerCapture(e.pointerId); wrap.classList.add('drag'); const list=container||$('items'); const q=sel||'.itemwrap'; const move=ev=>{ const rows=[...list.querySelectorAll(':scope > '+q)].filter(w=>w!==wrap); rows.forEach(w=>w.classList.remove('over')); const y=ev.clientY; let target=null; for(const w of rows){ const r=w.getBoundingClientRect(); if(y<r.top+r.height/2){ target=w; break; } } if(target){ list.insertBefore(wrap,target); } else list.appendChild(wrap); }; const up=()=>{ h.removeEventListener('pointermove',move); h.removeEventListener('pointerup',up); h.removeEventListener('pointercancel',up); wrap.classList.remove('drag'); list.querySelectorAll('.over').forEach(w=>w.classList.remove('over')); save(); if(isSp()) spCalc(); }; h.addEventListener('pointermove',move); h.addEventListener('pointerup',up); h.addEventListener('pointercancel',up); }); }
+/* メールのチップ入力: 入力中の文字も含めて値を返す。区切りは Enter・カンマ・セミコロン・スペース */
+const EMAIL_RE=/^[^@\s,;]+@[^@\s,;]+\.[^@\s,;]+$/;
+function mailsInit(boxId,inputId){ const box=$(boxId), inp=$(inputId); const commit=()=>{ const parts=inp.value.split(/[,;\s、]+/).filter(Boolean); if(!parts.length) return; parts.forEach(v=>addTag(v)); inp.value=''; }; const addTag=v=>{ v=v.trim(); if(!v) return; if([...box.querySelectorAll('.tag')].some(t=>t.dataset.v.toLowerCase()===v.toLowerCase())) return; const t=document.createElement('span'); t.className='tag'+(EMAIL_RE.test(v)?'':' bad'); t.dataset.v=v; t.innerHTML=`<b>${esc(v)}</b><button type="button" aria-label="削除">×</button>`; t.querySelector('button').onclick=()=>{ t.remove(); save(); clearErr(); }; box.insertBefore(t,inp); }; inp.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===','||e.key===';'||e.key===' '){ e.preventDefault(); commit(); save(); } else if(e.key==='Backspace'&&!inp.value){ const last=box.querySelector('.tag:last-of-type'); if(last){ last.remove(); save(); } } }); inp.addEventListener('blur',()=>{ commit(); save(); }); inp.addEventListener('input',()=>{ if(/[,;\s、]$/.test(inp.value)){ commit(); save(); } clearErr(); }); box.addEventListener('click',e=>{ if(e.target===box) inp.focus(); }); return { get(){ const tags=[...box.querySelectorAll('.tag')].map(t=>t.dataset.v); const cur=inp.value.trim(); return tags.concat(cur?[cur]:[]); }, set(v){ box.querySelectorAll('.tag').forEach(t=>t.remove()); inp.value=''; String(v||'').split(/[,;\s、]+/).filter(Boolean).forEach(addTag); }, valid(){ return this.get().every(x=>EMAIL_RE.test(x)); } }; }
+const MAILS=mailsInit('mailbox','mail'); const CCS=mailsInit('ccbox','cc');
+$('ccshow').onclick=()=>{ $('ccf').classList.remove('hide'); $('ccshow').classList.add('hide'); $('cc').focus(); };
 const rate=()=>Number($('tax').value)/100;
 const toEx=incl=>{ const r=rate(); return r?Math.round(incl/(1+r)):Math.round(incl); };
 const toIn=ex=>{ const r=rate(); return Math.round(ex)+Math.floor(Math.round(ex)*r); };
@@ -255,10 +266,10 @@ function suggest(input,box,src){ const v=input.value.trim(); const list=src().fi
 document.addEventListener('click',e=>{ if(!e.target.closest('.sug')&&!e.target.matches('.in')) document.querySelectorAll('.sug').forEach(b=>b.innerHTML=''); });
 function items(){ return [...$('items').querySelectorAll('.item')].map(d=>{ const raw=d.querySelector('.un').value; const u=raw===''?null:Number(raw); return {name:d.querySelector('.nm').value.trim(),qty:Number(d.querySelector('.qt').value||1),unit:u==null?null:(S.taxIn?toEx(u):u)}; }).filter(i=>i.name||i.unit!=null); }
 function calc(){ const it=items(); const r=rate(); const sub=it.reduce((s,i)=>s+(i.unit==null?0:i.qty*i.unit),0); const tax=Math.floor(sub*r); $('total').textContent=yen(sub+tax); $('taxlbl').textContent=(r?`消費税${Math.round(r*100)}% ${yen(tax)}`:'税なし')+`　税抜 ${yen(sub)}`; }
-function clearErr(){ document.querySelectorAll('.errmsg').forEach(e=>e.classList.remove('on')); document.querySelectorAll('.in.err').forEach(e=>e.classList.remove('err')); }
-function form(){ const f={ id:S.id||'', kind:S.kind, entityId:S.entity, to:$('to').value.trim(), subject:$('subject').value.trim(), date:(isQ()?$('qdate').value:$('date').value)||todayIso(), due:$('due').value, valid:$('valid').value, items:items(), taxRate:Number($('tax').value), mail:$('mail').value.trim(), via:S.via, staff:$('staff').value, accountId:$('acct').value, note:$('note').value.trim(), recurring:(!isQ()&&S.rec)?{until:$('recuntil').value?$('recuntil').value:''}:null }; if(isSp()){ f.qtype='space'; f.space=spaceData(); f.subject=f.space.project.name; } return f; }
+function clearErr(){ document.querySelectorAll('.errmsg').forEach(e=>e.classList.remove('on')); document.querySelectorAll('.in.err,.mails.err').forEach(e=>e.classList.remove('err')); }
+function form(){ const f={ id:S.id||'', kind:S.kind, entityId:S.entity, to:$('to').value.trim(), subject:$('subject').value.trim(), date:(isQ()?$('qdate').value:$('date').value)||todayIso(), due:$('due').value, valid:$('valid').value, items:items(), taxRate:Number($('tax').value), mail:MAILS.get().join(', '), cc:CCS.get().join(', '), via:S.via, staff:$('staff').value, accountId:$('acct').value, note:$('note').value.trim(), recurring:(!isQ()&&S.rec)?{until:$('recuntil').value?$('recuntil').value:''}:null }; if(isSp()){ f.qtype='space'; f.space=spaceData(); f.subject=f.space.project.name; } return f; }
 function save(){ if(S.id) return; try{ localStorage.setItem('bill-draft-'+S.kind+(isSp()?'-space':''),JSON.stringify(form())); }catch(e){} }
-function fill(p){ if(p.kind) setKind(p.kind); if(p.qtype){ setQtype(p.qtype); } if(p.space){ fillSpace(p.space); } $('to').value=p.to||''; $('subject').value=p.subject||''; if(p.valid!==undefined) $('valid').value=p.valid||''; if(isQ()&&p.date) $('qdate').value=p.date; $('items').innerHTML=''; (p.items&&p.items.length?p.items:[{}]).forEach(itemRow); $('due').value=p.due||''; $('mail').value=p.mail||''; setVia(p.via||'メール'); $('note').value=p.note||''; if(p.date) $('date').value=p.date; if(p.taxRate!=null) $('tax').value=String(p.taxRate); if(p.staff) $('staff').value=p.staff; if(p.entityId) setEntity(p.entityId); if(p.accountId){ if(![...$('acct').options].some(o=>o.value===p.accountId)){ const a=(S.boot&&S.boot.accounts||[]).find(x=>x.id===p.accountId); $('acct').insertAdjacentHTML('beforeend',`<option value="${esc(p.accountId)}">${esc(a?a.label+'（'+a.name+'）':p.accountId)}</option>`); } $('acct').value=p.accountId; } S.acct=p.accountId||S.acct||''; calc(); }
+function fill(p){ if(p.kind) setKind(p.kind); if(p.qtype){ setQtype(p.qtype); } if(p.space){ fillSpace(p.space); } $('to').value=p.to||''; $('subject').value=p.subject||''; if(p.valid!==undefined) $('valid').value=p.valid||''; if(isQ()&&p.date) $('qdate').value=p.date; $('items').innerHTML=''; (p.items&&p.items.length?p.items:[{}]).forEach(itemRow); $('due').value=p.due||''; MAILS.set(p.mail||''); CCS.set(p.cc||''); if(p.cc){ $('ccf').classList.remove('hide'); $('ccshow').classList.add('hide'); } setVia(p.via||'メール'); $('note').value=p.note||''; if(p.date) $('date').value=p.date; if(p.taxRate!=null) $('tax').value=String(p.taxRate); if(p.staff) $('staff').value=p.staff; if(p.entityId) setEntity(p.entityId); if(p.accountId){ if(![...$('acct').options].some(o=>o.value===p.accountId)){ const a=(S.boot&&S.boot.accounts||[]).find(x=>x.id===p.accountId); $('acct').insertAdjacentHTML('beforeend',`<option value="${esc(p.accountId)}">${esc(a?a.label+'（'+a.name+'）':p.accountId)}</option>`); } $('acct').value=p.accountId; } S.acct=p.accountId||S.acct||''; calc(); }
 function setVia(v){ S.via=v; $('via').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); $('mailf').classList.toggle('hide',v!=='メール'); }
 function setEntity(id){ const prev=$('acct').value; S.entity=id; $('ent').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===id)); const sel=$('acct'); const list=(S.boot&&S.boot.accounts||[]).filter(a=>a.entity===id); sel.innerHTML=list.map(a=>`<option value="${esc(a.id)}">${esc(a.label)}（${esc(a.name)}）</option>`).join(''); if(list.some(a=>a.id===prev)) sel.value=prev; }
 
@@ -273,7 +284,7 @@ $('to').addEventListener('input',()=>suggest($('to'),$('sug_to'),()=>(S.boot&&S.
 $('to').addEventListener('focus',()=>suggest($('to'),$('sug_to'),()=>(S.boot&&S.boot.clients||[]).map(c=>c.name)));
 $('subject').addEventListener('input',()=>suggest($('subject'),$('sug_subject'),()=>(S.boot&&S.boot.subjects)||[]));
 $('subject').addEventListener('focus',()=>suggest($('subject'),$('sug_subject'),()=>(S.boot&&S.boot.subjects)||[]));
-$('to').addEventListener('change',()=>{ const c=(S.boot&&S.boot.clients||[]).find(x=>x.name===$('to').value.trim()); if(c){ if(c.mail&&!$('mail').value) $('mail').value=c.mail; if(c.via==='LINE') setVia('LINE'); if(c.staff) $('staff').value=c.staff; } save(); });
+$('to').addEventListener('change',()=>{ const c=(S.boot&&S.boot.clients||[]).find(x=>x.name===$('to').value.trim()); if(c){ if(c.mail&&!MAILS.get().length) MAILS.set(c.mail); if(c.via==='LINE') setVia('LINE'); if(c.staff) $('staff').value=c.staff; } save(); });
 $('via').querySelectorAll('button').forEach(b=>b.onclick=()=>{ setVia(b.dataset.v); save(); clearErr(); });
 $('kind').querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(S.id){ location.href=location.pathname+'?kind='+b.dataset.v; return; } const cur=form(); setKind(b.dataset.v); let d=null; try{ d=JSON.parse(localStorage.getItem('bill-draft-'+S.kind)||'null'); }catch(e){} if(d&&(d.to||d.subject||(d.items||[]).some(i=>i.name))){ fill(d); } else { fill(Object.assign(cur,{kind:S.kind,id:''})); } history.replaceState(null,'',location.pathname+(S.kind==='quote'?'?kind=quote':'')); });
 $('qtype').querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(S.id){ toast('発行済みの見積は種類を変えられません'); return; } setQtype(b.dataset.v); save(); });
@@ -283,7 +294,7 @@ $('addEx').onclick=()=>{ addEx('','pct',''); };
 $('taxmode').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const next=b.dataset.v==='in'; if(next===S.taxIn) return; const cur=items(); S.taxIn=next; $('taxmode').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); $('items').innerHTML=''; (cur.length?cur:[{}]).forEach(itemRow); calc(); if(isSp()){ const sp=spaceData(); S.taxIn=next; fillSpace(sp); } save(); try{ localStorage.setItem('bill-taxmode',next?'in':'ex'); }catch(e){} });
 $('rec').onclick=()=>{ S.rec=!S.rec; $('rec').classList.toggle('on',S.rec); $('recopt').classList.toggle('hide',!S.rec); save(); };
 $('addItem').onclick=()=>{ itemRow().querySelector('.nm').focus(); };
-['to','subject','due','mail','note','date','tax','staff','acct','recuntil'].forEach(id=>$(id).addEventListener('input',()=>{ save(); clearErr(); if(id==='tax') calc(); }));
+['to','subject','due','note','date','tax','staff','acct','recuntil'].forEach(id=>$(id).addEventListener('input',()=>{ save(); clearErr(); if(id==='tax') calc(); }));
 $('clear').onclick=()=>{ const prev=form(); fill({items:[{}],due:endOfNextMonth(),date:todayIso(),valid:plus30(),space:isSp()?{}:undefined}); try{ localStorage.removeItem('bill-draft-'+S.kind); }catch(e){} toast('消しました',()=>{ fill(prev); save(); }); };
 
 $('photo').onchange=async()=>{
@@ -293,7 +304,7 @@ $('photo').onchange=async()=>{
     const urls=await Promise.all(files.map(shrink));
     const p=await call('api_parseImage',urls,$('subject').value||'');
     const it=(p.items||[]).map(i=>({name:i.name,qty:i.qty||1,unit:i.unit==null?null:(p.tax_included_input?Math.round(i.unit/1.1):i.unit)}));
-    fill(Object.assign(form(),{to:p.client||$('to').value,subject:p.subject||$('subject').value,items:it.length?it:items(),due:p.due||$('due').value,mail:p.mail||$('mail').value,entityId:p.entity||S.entity}));
+    fill(Object.assign(form(),{to:p.client||$('to').value,subject:p.subject||$('subject').value,items:it.length?it:items(),due:p.due||$('due').value,mail:p.mail||MAILS.get().join(', '),cc:CCS.get().join(', '),entityId:p.entity||S.entity}));
     save(); $('photomsg').textContent='写真から入れました。内容を確認してください'; toast('写真から入れました');
   }catch(e){ $('photomsg').textContent='読み取れませんでした'; toast('読み取れませんでした: '+(e.message||e)); }
   $('photo').value='';
@@ -307,7 +318,7 @@ function validate(){
   if(!isSp()&&!$('subject').value.trim()){ const it0=items()[0]; if(it0&&it0.name) $('subject').value=it0.name; else bad('subject','e_subject'); }
   if(isSp()){ if(!$('pjname').value.trim()) bad('pjname','e_pjname'); const sp=spaceData(); const okSec=sp.sections.length&&sp.sections.every(s=>s.name&&s.items.some(i=>i.name))&&sp.sections.every(s=>s.items.filter(i=>i.name).every(i=>i.price!=null&&!isNaN(i.price))); if(!okSec){ ok=false; $('e_secs').classList.add('on'); first=first||$('secs'); } }
   else { const it=items(); if(!it.length||it.some(i=>!i.name||i.unit==null||isNaN(i.unit))){ ok=false; $('e_items').classList.add('on'); first=first||$('items'); } }
-  if(S.via==='メール'&&!/^[^@\s]+@[^@\s]+\.[^@\s]+(\s*,\s*[^@\s]+@[^@\s]+\.[^@\s]+)*$/.test($('mail').value.trim())) bad('mail','e_mail');
+  if(S.via==='メール'&&(!MAILS.get().length||!MAILS.valid()||!CCS.valid())){ ok=false; $('mailbox').classList.add('err'); $('e_mail').classList.add('on'); first=first||$('mailbox'); }
   if(!ok&&first) first.scrollIntoView({behavior:'smooth',block:'center'});
   return ok;
 }
@@ -326,7 +337,7 @@ $('issue').onclick=async()=>{
 };
 
 function showPreview(r){
-  const acc=(S.boot&&S.boot.accounts||[]).find(a=>a.id===(r.accountId||$('acct').value)); $('psum').innerHTML=`<div><span>宛名</span>${esc(r.to)}</div><div><span>金額（税込）</span><b>${yen(r.total)}</b></div><div><span>${isQ()?'見積番号':'請求番号'}</span>${esc(r.id)}</div><div><span>送り方</span>${esc(r.via)}${r.via==='メール'&&r.mail?`<br><small>${esc(r.mail)}</small>`:''}</div><div style="grid-column:1/-1"><span>振込先</span>${acc?esc(acc.label+'　'+acc.name):'—'}</div>`;
+  const acc=(S.boot&&S.boot.accounts||[]).find(a=>a.id===(r.accountId||$('acct').value)); $('psum').innerHTML=`<div><span>宛名</span>${esc(r.to)}</div><div><span>金額（税込）</span><b>${yen(r.total)}</b></div><div><span>${isQ()?'見積番号':'請求番号'}</span>${esc(r.id)}</div><div><span>送り方</span>${esc(r.via)}${r.via==='メール'&&r.mail?`<br><small>${esc(r.mail)}</small>`:''}${r.cc?`<br><small>CC: ${esc(r.cc)}</small>`:''}</div><div style="grid-column:1/-1"><span>振込先</span>${acc?esc(acc.label+'　'+acc.name):'—'}</div>`;
   const f=$('pframe'); f.srcdoc=r.html||'<p style="font-family:sans-serif;padding:20px">プレビューを作れませんでした</p>';
   const w=$('prevwrap').clientWidth||360; const sc=w/794; f.style.transform=`scale(${sc})`; $('prevwrap').style.height=Math.round(1123*sc)+'px';
   const sendBtn=$('send'); sendBtn.innerHTML=`<span>${r.via==='メール'?'メールで送る':'LINEで送る'}</span>`; sendBtn.dataset.l=sendBtn.innerHTML;
@@ -341,7 +352,7 @@ window.addEventListener('resize',()=>{ if(!$('scrPrev').classList.contains('hide
 $('send').onclick=()=>{
   const r=S.inv; if(!r) return;
   if(r.via==='メール'){
-    sheet(`<h3>メールで送ります</h3><p>invoice@melagrp.com から <b>${esc(r.mail)}</b> 宛に、${isQ()?'見積書':'請求書'}PDFを添えて送ります。</p><button class="btn pri" type="button" id="goSend">送信する</button><button class="btn ghost" type="button" id="noSend">やめる</button>`);
+    sheet(`<h3>メールで送ります</h3><p>invoice@melagrp.com から <b>${esc(r.mail)}</b> 宛${r.cc?`（CC: ${esc(r.cc)}）`:''}に、${isQ()?'見積書':'請求書'}PDFを添えて送ります。</p><button class="btn pri" type="button" id="goSend">送信する</button><button class="btn ghost" type="button" id="noSend">やめる</button>`);
     $('noSend').onclick=closeSheet;
     $('goSend').onclick=async()=>{ const b=$('goSend'); const pg=progress(b,'送信中',8); try{ const x=await call(isQ()?'api_sendQuoteMail':'api_sendInvoiceMail',r.id); pg.done(); closeSheet(); done(x.already?'送付済みでした':'送信しました',`${esc(r.to)} 様　${yen(r.total)}<br>→ ${esc(x.to)}<br>${x.pushedAt?`LINEに完了通知を送信済み（${esc(x.pushedAt)}・${x.notified}人）`:'LINE通知はありません'}`); }catch(e){ pg.fail(); toast('送れませんでした: '+(e.message||e)); } };
   } else {
