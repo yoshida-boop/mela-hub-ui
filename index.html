@@ -200,8 +200,8 @@ const _qs = new URLSearchParams(location.search);
 
 const VIEWS = [['home','ホーム'],['bill','請求書'],['quote','見積書'],['pay','支払い'],['docs','書類'],['settings','設定']];
 const SUBS = {
-  bill: [['new','新しく作る'],['ar','一覧'],['invoice','確認して送る'],['dun','催促']],
-  quote: [['qnew','新しく作る'],['qlist','一覧'],['qview','確認して送る']],
+  bill: [['ar','一覧'],['new','新しく作る'],['invoice','確認して送る'],['dun','催促']],
+  quote: [['qlist','一覧'],['qnew','新しく作る'],['qview','確認して送る']],
   pay:  [['ap','払うもの'],['expense','立替・経費'],['line','LINE受信']],
 };
 const LEGACY = {ar:['bill','ar'],invoice:['bill','invoice'],dun:['bill','dun'],new:['bill','new'],ap:['pay','ap'],line:['pay','line'],expense:['pay','expense']};
@@ -219,7 +219,7 @@ const S = { view:'home', sub:{}, boot:null, ar:[], ap:[], line:[], expenses:[], 
 })();
 const subOf = v => S.sub[v] || (SUBS[v] ? SUBS[v][0][0] : null);
 
-const BUILD='2026-11-13a';
+const BUILD='2026-11-13b';
 (async()=>{ try{ const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text(); const m=t.match(/const BUILD='([^']+)'/); if(m&&m[1]!==BUILD){ location.reload(); } }catch(e){} })();
 const yen = n => n==null||n===''||isNaN(n) ? '—' : '¥'+Math.round(Number(n)).toLocaleString('ja-JP');
 const pill = s => `<span class="pill ${PILL[s]||'p-grey'}">${s||'—'}</span>`;
@@ -289,6 +289,8 @@ function renderNav(){
   document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
     stopMic();
     const v=b.dataset.v;
+    if(b.dataset.s==='new'){ location.href='bill.html'; return; }
+    if(b.dataset.s==='qnew'){ location.href='bill.html?kind=quote'; return; }
     if(b.dataset.s) S.sub[v]=b.dataset.s;
     S.view=v; closeDrawer(); render();
   });
