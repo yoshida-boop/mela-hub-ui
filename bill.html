@@ -84,26 +84,53 @@ button,select,input,textarea{font:inherit;color:inherit}
 .pct{font-variant-numeric:tabular-nums;min-width:3.2em;text-align:left}
 .note{font-size:12.5px;color:var(--mute)}
 .sug{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.sug:empty{display:none}.sug button{border:1px solid var(--line2);background:#fff;border-radius:16px;padding:5px 11px;font-size:13px;color:var(--ink);cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sug button:active{background:var(--accbg)}
+.sp-sec{border:1px solid var(--line);border-radius:12px;padding:10px 10px 8px;margin-bottom:10px;background:#FBFAF8}
+.sp-head{display:grid;grid-template-columns:22px 1fr 28px;gap:6px;align-items:center;margin-bottom:8px}
+.sp-row{display:grid;grid-template-columns:22px 1fr 54px 60px 86px 28px;gap:5px;align-items:center;margin-bottom:4px}
+.sp-row .in,.sp-row select.in{padding:8px 8px;font-size:14px}
+.sp-spec{display:grid;grid-template-columns:22px 1fr 1fr;gap:5px;margin:0 0 8px}
+.sp-spec .in{padding:6px 8px;font-size:12.5px;color:var(--ink2)}
+.sp-sub{display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);padding:4px 2px 0;border-top:1px dashed var(--line2);margin-top:4px}
+.sp-sub b{color:var(--ink);font-variant-numeric:tabular-nums}
+.sp-ex{display:grid;grid-template-columns:1fr 70px 86px 28px;gap:6px;align-items:center;margin-bottom:6px}
+.sp-tot{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:13.5px;padding-top:8px;border-top:1px solid var(--line);margin-top:8px}
+.sp-tot .k{color:var(--ink2)}.sp-tot .v{text-align:right;font-variant-numeric:tabular-nums}.sp-tot .g{font-weight:700;font-size:18px}
+.x2{border:0;background:none;color:var(--mute);font-size:20px;cursor:pointer;padding:0;line-height:1}
 .dup{background:var(--warnbg);border:1px solid #F0D9A8;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px}
 </style></head>
 <body>
 <div class="top"><button class="back hide" id="back">‹ 戻る</button><h1 id="ttl">請求する</h1></div>
 <div class="wrap">
 <div class="seg" id="kind" style="margin:0 0 12px;max-width:260px"><button type="button" data-v="invoice" class="on">請求書</button><button type="button" data-v="quote">見積書</button></div>
+<div class="seg quote-only hide" id="qtype" style="margin:-4px 0 12px;max-width:260px"><button type="button" data-v="normal" class="on">通常</button><button type="button" data-v="space">空間（工事）</button></div>
 
 <div id="scrForm">
   <div id="dup" class="dup hide"></div>
   <div class="sec">
     <h2>宛先</h2>
     <label class="f"><span>宛名</span><input class="in" id="to" placeholder="会社名または氏名" autocomplete="off"><div class="sug" id="sug_to"></div><div class="errmsg" id="e_to">宛名を入れてください</div></label>
+    <div id="pj" class="space-only hide">
+      <label class="f"><span>工事名称</span><input class="in" id="pjname" placeholder="例: ○○店 内装工事" autocomplete="off"><div class="errmsg" id="e_pjname">工事名称を入れてください</div></label>
+      <label class="f"><span>工事場所</span><input class="in" id="pjplace" placeholder="例: 東京都渋谷区○○ 1-2-3 ○○ビル3F" autocomplete="off"></label>
+      <div class="row"><label class="f" style="flex:1"><span>工期</span><input class="in" id="pjperiod" placeholder="例: 2026年12月上旬〜下旬 / 御協議の上" autocomplete="off"></label></div>
+      <label class="f"><span>お支払方法</span><input class="in" id="pjterms" value="御請求書発行から1か月以内にお振込み" autocomplete="off"></label>
+    </div>
   </div>
 
   <div class="sec">
     <div class="row" style="justify-content:space-between;margin-bottom:10px"><h2 style="margin:0">内容</h2><div class="seg" id="taxmode" style="width:170px"><button type="button" data-v="ex" class="on">税抜で入力</button><button type="button" data-v="in">税込で入力</button></div></div>
-    <div id="items"></div>
+    <div id="normalItems"><div id="items"></div>
     <button class="add" id="addItem" type="button">＋ 品目を追加</button>
     <div class="errmsg" id="e_items">金額を入れてください</div>
-    <div class="total"><div>税込合計 <small id="taxlbl">消費税10%</small></div><b id="total">¥0</b></div>
+    <div class="total"><div>税込合計 <small id="taxlbl">消費税10%</small></div><b id="total">¥0</b></div></div>
+    <div id="spaceItems" class="hide">
+      <div id="secs"></div>
+      <button class="add" id="addSec" type="button">＋ 工種を追加（解体工事費・内装仕上げ工事費 など）</button>
+      <div class="errmsg" id="e_secs">工種と明細を入れてください</div>
+      <div style="margin-top:12px"><div class="note" style="margin-bottom:6px">諸経費（直接工事費に対する率、または金額）</div><div id="exs"></div><button class="add" id="addEx" type="button">＋ 諸経費の行を追加</button></div>
+      <div class="row" style="margin-top:10px;gap:10px"><label class="f" style="flex:1;margin:0"><span>お値引き（税抜）</span><input class="in" id="disc" type="number" inputmode="numeric" placeholder="0"></label><label class="f" style="flex:1;margin:0"><span>端数のまるめ</span><select class="in" id="round"><option value="0">しない</option><option value="100">100円未満を切り捨て</option><option value="1000" selected>1,000円未満を切り捨て</option><option value="10000">1万円未満を切り捨て</option></select></label></div>
+      <div class="sp-tot" id="sptot"></div>
+    </div>
     <label class="f" style="margin-top:12px"><span>件名（空欄なら品目名を使います）</span><input class="in" id="subject" placeholder="例: コンサルティング費（11月分）" autocomplete="off"><div class="sug" id="sug_subject"></div><div class="errmsg" id="e_subject">件名か品目名を入れてください</div></label>
     <div class="photo" style="margin-top:4px"><label class="chip"><input type="file" id="photo" accept="image/*" multiple style="display:none">写真から埋める</label><span id="photomsg">見積書やチャットの画面から金額・宛名を読み取ります</span></div>
   </div>
@@ -187,15 +214,40 @@ function show(scr){ ['scrForm','scrPrev','scrDone'].forEach(s=>$(s).classList.to
 
 const S={boot:null,id:Q.get('id')||'',inv:null,via:'メール',rec:false,entity:'E01',taxIn:false,kind:(Q.get('kind')==='quote'||/^E0\d-Q/.test(Q.get('id')||''))?'quote':'invoice'};
 const isQ=()=>S.kind==='quote';
+const isSp=()=>isQ()&&S.qtype==='space';
+S.qtype=Q.get('qtype')==='space'?'space':'normal';
+const SP_SECTIONS=['仮設工事費','解体工事費','軽鉄ボード工事費','木工事費','塗装工事費','内装仕上げ工事費','家具工事費','建具工事費','硝子・鏡工事費','電気工事費','空調工事費','換気工事費','給排水衛生工事費','サイン工事費','設計・デザイン費','発生材撤去処分費','竣工クリーニング','現場管理費','諸経費'];
+const SP_UNITS=['式','㎡','m','枚','本','箇所','個','台','人工','set','缶','㎥','kg','日'];
 const plus30=()=>{ const d=new Date(); d.setDate(d.getDate()+30); return fmt(d); };
-function setKind(k){ S.kind=k; $('kind').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===k)); document.querySelectorAll('.inv-only').forEach(e=>e.classList.toggle('hide',k==='quote')); document.querySelectorAll('.quote-only').forEach(e=>e.classList.toggle('hide',k!=='quote')); $('h2when').textContent=k==='quote'?'いつまで有効・どう送る':'いつまでに・どう送る'; if(k==='quote'){ if(!$('qdate').value) $('qdate').value=todayIso(); if(!$('valid').value) $('valid').value=plus30(); } $('subject').placeholder=k==='quote'?'例: Webサイト制作一式':'例: コンサルティング費（11月分）'; if(!S.id){ $('ttl').textContent=k==='quote'?'見積する':'請求する'; const ib=$('issue'); if(!ib.classList.contains('busy')){ ib.innerHTML='<span>発行する</span>'; ib.dataset.l=ib.innerHTML; } } }
+function setQtype(t){ S.qtype=t; $('qtype').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===t)); document.querySelectorAll('.space-only').forEach(e=>e.classList.toggle('hide',!isSp())); $('normalItems').classList.toggle('hide',isSp()); $('spaceItems').classList.toggle('hide',!isSp()); const sj=$('subject').closest('label'); if(sj) sj.classList.toggle('hide',isSp()); if(isSp()){ if(!$('secs').children.length) addSec(); if(!$('exs').children.length){ addEx('現場管理費','pct',''); addEx('諸経費','pct',''); } spCalc(); } }
+function setKind(k){ S.kind=k; $('kind').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===k)); document.querySelectorAll('.inv-only').forEach(e=>e.classList.toggle('hide',k==='quote')); document.querySelectorAll('.quote-only').forEach(e=>e.classList.toggle('hide',k!=='quote')); if(k!=='quote'){ document.querySelectorAll('.space-only').forEach(e=>e.classList.add('hide')); $('normalItems').classList.remove('hide'); $('spaceItems').classList.add('hide'); const sj=$('subject').closest('label'); if(sj) sj.classList.remove('hide'); } else setQtype(S.qtype); $('h2when').textContent=k==='quote'?'いつまで有効・どう送る':'いつまでに・どう送る'; if(k==='quote'){ if(!$('qdate').value) $('qdate').value=todayIso(); if(!$('valid').value) $('valid').value=plus30(); } $('subject').placeholder=k==='quote'?'例: Webサイト制作一式':'例: コンサルティング費（11月分）'; if(!S.id){ $('ttl').textContent=k==='quote'?'見積する':'請求する'; const ib=$('issue'); if(!ib.classList.contains('busy')){ ib.innerHTML='<span>発行する</span>'; ib.dataset.l=ib.innerHTML; } } }
 const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const endOfNextMonth=()=>{ const d=new Date(); return fmt(new Date(d.getFullYear(),d.getMonth()+2,0)); };
 const todayIso=()=>fmt(new Date());
 
 function itemRow(i){ i=i||{}; const wrap=document.createElement('div'); wrap.className='itemwrap'; const d=document.createElement('div'); d.className='item'; const shown=i.unit==null?'':(S.taxIn?toIn(i.unit):i.unit); d.innerHTML=`<span class="grip" aria-label="並べ替え" title="押したまま上下に動かす">⋮⋮</span><input class="in nm" placeholder="品目（例: コンサルティング費 11月分）" value="${esc(i.name||'')}" autocomplete="off"><input class="in qt" type="number" inputmode="numeric" min="1" value="${esc(i.qty||1)}" aria-label="数量"><input class="in un" type="number" inputmode="numeric" placeholder="${S.taxIn?'税込単価':'税抜単価'}" value="${esc(shown)}" aria-label="単価"><button class="x" type="button" aria-label="削除">×</button>`; wrap.appendChild(d); const sg=document.createElement('div'); sg.className='sug'; wrap.appendChild(sg); d.querySelector('.x').onclick=()=>{ if($('items').querySelectorAll('.item').length>1){ wrap.remove(); calc(); save(); } }; d.querySelectorAll('input').forEach(x=>x.oninput=()=>{ calc(); save(); clearErr(); }); const nm=d.querySelector('.nm'); nm.addEventListener('input',()=>suggest(nm,sg,()=>(S.boot&&S.boot.itemNames)||[])); nm.addEventListener('focus',()=>suggest(nm,sg,()=>(S.boot&&S.boot.itemNames)||[])); $('items').appendChild(wrap); bindDrag(d.querySelector('.grip'),wrap); return d; }
+/* ---------- 空間（工事）見積の編集 ---------- */
+function addSec(sec){ sec=sec||{}; const d=document.createElement('div'); d.className='sp-sec'; d.innerHTML=`<div class="sp-head"><span class="grip" title="押したまま上下に動かす">⋮⋮</span><input class="in secname" placeholder="工種名（例: 解体工事費）" value="${esc(sec.name||'')}" autocomplete="off"><button class="x2" type="button" aria-label="工種を削除">×</button></div><div class="sug secsug"></div><div class="rows"></div><button class="add addrow" type="button" style="padding:7px;font-size:13px">＋ 明細を追加</button><div class="sp-sub"><span>小計（税抜）</span><b class="secsub">¥0</b></div>`;
+  $('secs').appendChild(d); const nm=d.querySelector('.secname'); const sg=d.querySelector('.secsug'); const src=()=>{ const used=[...$('secs').querySelectorAll('.secname')].map(x=>x.value); return SP_SECTIONS.filter(x=>!used.includes(x)); }; nm.addEventListener('input',()=>{ suggest(nm,sg,src); save(); }); nm.addEventListener('focus',()=>suggest(nm,sg,src));
+  d.querySelector('.x2').onclick=()=>{ if($('secs').children.length>1){ d.remove(); spCalc(); save(); } else toast('工種は1つ以上必要です'); };
+  d.querySelector('.addrow').onclick=()=>{ addRow(d).querySelector('.rn').focus(); };
+  (sec.items&&sec.items.length?sec.items:[{}]).forEach(it=>addRow(d,it));
+  bindDrag(d.querySelector('.grip'),d,$('secs'),'.sp-sec'); return d; }
+function addRow(secEl,it){ it=it||{}; const rows=secEl.querySelector('.rows'); const w=document.createElement('div'); w.className='sp-item';
+  const shown=it.price==null||it.price===''?'':(S.taxIn?toIn(it.price):it.price);
+  w.innerHTML=`<div class="sp-row"><span class="grip" title="押したまま上下に動かす">⋮⋮</span><input class="in rn" placeholder="名称" value="${esc(it.name||'')}" autocomplete="off"><input class="in rq" type="number" inputmode="decimal" step="0.1" placeholder="数量" value="${it.qty==null?'':esc(it.qty)}"><select class="in ru">${SP_UNITS.map(u=>`<option ${u===(it.unit||'式')?'selected':''}>${u}</option>`).join('')}</select><input class="in rp" type="number" inputmode="numeric" placeholder="${S.taxIn?'税込単価':'単価'}" value="${esc(shown)}"><button class="x2" type="button" aria-label="行を削除">×</button></div><div class="sp-spec"><span></span><input class="in rs" placeholder="摘要・寸法（例: GB-R ア12.5）" value="${esc(it.spec||'')}" autocomplete="off"><input class="in rm" placeholder="備考" value="${esc(it.note||'')}" autocomplete="off"></div>`;
+  rows.appendChild(w); w.querySelectorAll('input,select').forEach(x=>x.addEventListener('input',()=>{ spCalc(); save(); clearErr(); })); w.querySelector('.x2').onclick=()=>{ w.remove(); spCalc(); save(); }; bindDrag(w.querySelector('.grip'),w,rows,'.sp-item'); return w; }
+function addEx(name,mode,value){ const w=document.createElement('div'); w.className='sp-ex'; w.innerHTML=`<input class="in exn" placeholder="名称" value="${esc(name||'')}" autocomplete="off"><select class="in exm"><option value="pct" ${mode!=='amt'?'selected':''}>%</option><option value="amt" ${mode==='amt'?'selected':''}>円</option></select><input class="in exv" type="number" inputmode="decimal" placeholder="${mode==='amt'?'金額':'率'}" value="${value==null?'':esc(value)}"><button class="x2" type="button" aria-label="削除">×</button>`; $('exs').appendChild(w); w.querySelectorAll('input,select').forEach(x=>x.addEventListener('input',()=>{ w.querySelector('.exv').placeholder=w.querySelector('.exm').value==='amt'?'金額':'率'; spCalc(); save(); })); w.querySelector('.x2').onclick=()=>{ w.remove(); spCalc(); save(); }; return w; }
+function spaceData(){ return { project:{name:$('pjname').value.trim(),place:$('pjplace').value.trim(),period:$('pjperiod').value.trim(),terms:$('pjterms').value.trim()},
+  sections:[...$('secs').querySelectorAll('.sp-sec')].map(d=>({name:d.querySelector('.secname').value.trim(),items:[...d.querySelectorAll('.sp-item')].map(w=>{ const raw=w.querySelector('.rp').value; const p=raw===''?null:Number(raw); return {name:w.querySelector('.rn').value.trim(),spec:w.querySelector('.rs').value.trim(),qty:Number(w.querySelector('.rq').value||1),unit:w.querySelector('.ru').value,price:p==null?null:(S.taxIn?toEx(p):p),note:w.querySelector('.rm').value.trim()}; })})),
+  extras:[...$('exs').querySelectorAll('.sp-ex')].map(w=>({name:w.querySelector('.exn').value.trim(),mode:w.querySelector('.exm').value,value:w.querySelector('.exv').value===''?0:Number(w.querySelector('.exv').value)})),
+  discount:Number($('disc').value||0), rounding:Number($('round').value||0) }; }
+function spCalc(){ const sp=spaceData(); const r=rate(); let direct=0; $('secs').querySelectorAll('.sp-sec').forEach((d,i)=>{ const sec=sp.sections[i]; const sub=sec.items.reduce((t,x)=>t+(x.price==null?0:Math.round(x.qty*x.price)),0); d.querySelector('.secsub').textContent=yen(sub); direct+=sub; });
+  const ex=sp.extras.filter(e=>e.name&&e.value).map(e=>({name:e.name,amt:e.mode==='pct'?Math.floor(direct*e.value/100):Math.round(e.value),pct:e.mode==='pct'?e.value:null})); const exT=ex.reduce((t,e)=>t+e.amt,0); const disc=Math.max(0,Math.round(sp.discount||0)); const pre=direct+exT-disc; const u=sp.rounding; const adj=u?-(((pre%u)+u)%u):0; const taxable=pre+adj; const tax=Math.floor(taxable*r);
+  $('sptot').innerHTML=`<span class="k">直接工事費</span><span class="v">${yen(direct)}</span>${ex.map(e=>`<span class="k">${esc(e.name)}${e.pct!=null?`（${e.pct}%）`:''}</span><span class="v">${yen(e.amt)}</span>`).join('')}${disc?`<span class="k">お値引き</span><span class="v">-${yen(disc)}</span>`:''}${adj?`<span class="k">端数調整</span><span class="v">${yen(adj)}</span>`:''}<span class="k">工事価格（税抜）</span><span class="v">${yen(taxable)}</span><span class="k">消費税（${Math.round(r*100)}%）</span><span class="v">${yen(tax)}</span><span class="k g">合計（税込）</span><span class="v g">${yen(taxable+tax)}</span>`; }
+function fillSpace(sp){ sp=sp||{}; const pj=sp.project||{}; $('pjname').value=pj.name||''; $('pjplace').value=pj.place||''; $('pjperiod').value=pj.period||''; if(pj.terms) $('pjterms').value=pj.terms; $('secs').innerHTML=''; (sp.sections&&sp.sections.length?sp.sections:[{}]).forEach(addSec); $('exs').innerHTML=''; (sp.extras&&sp.extras.length?sp.extras:[{name:'現場管理費',mode:'pct',value:''},{name:'諸経費',mode:'pct',value:''}]).forEach(e=>addEx(e.name,e.mode,e.value)); $('disc').value=sp.discount||''; $('round').value=String(sp.rounding==null?1000:sp.rounding); spCalc(); }
 /* 品目の並べ替え: ハンドルを押したまま上下にスライド（指・マウス両対応） */
-function bindDrag(h,wrap){ h.addEventListener('pointerdown',e=>{ e.preventDefault(); h.setPointerCapture(e.pointerId); wrap.classList.add('drag'); const list=$('items'); const move=ev=>{ const rows=[...list.querySelectorAll('.itemwrap')].filter(w=>w!==wrap); rows.forEach(w=>w.classList.remove('over')); const y=ev.clientY; let target=null; for(const w of rows){ const r=w.getBoundingClientRect(); if(y<r.top+r.height/2){ target=w; break; } } if(target){ list.insertBefore(wrap,target); } else list.appendChild(wrap); }; const up=()=>{ h.removeEventListener('pointermove',move); h.removeEventListener('pointerup',up); h.removeEventListener('pointercancel',up); wrap.classList.remove('drag'); list.querySelectorAll('.over').forEach(w=>w.classList.remove('over')); save(); }; h.addEventListener('pointermove',move); h.addEventListener('pointerup',up); h.addEventListener('pointercancel',up); }); }
+function bindDrag(h,wrap,container,sel){ h.addEventListener('pointerdown',e=>{ e.preventDefault(); h.setPointerCapture(e.pointerId); wrap.classList.add('drag'); const list=container||$('items'); const q=sel||'.itemwrap'; const move=ev=>{ const rows=[...list.querySelectorAll(':scope > '+q)].filter(w=>w!==wrap); rows.forEach(w=>w.classList.remove('over')); const y=ev.clientY; let target=null; for(const w of rows){ const r=w.getBoundingClientRect(); if(y<r.top+r.height/2){ target=w; break; } } if(target){ list.insertBefore(wrap,target); } else list.appendChild(wrap); }; const up=()=>{ h.removeEventListener('pointermove',move); h.removeEventListener('pointerup',up); h.removeEventListener('pointercancel',up); wrap.classList.remove('drag'); list.querySelectorAll('.over').forEach(w=>w.classList.remove('over')); save(); if(isSp()) spCalc(); }; h.addEventListener('pointermove',move); h.addEventListener('pointerup',up); h.addEventListener('pointercancel',up); }); }
 const rate=()=>Number($('tax').value)/100;
 const toEx=incl=>{ const r=rate(); return r?Math.round(incl/(1+r)):Math.round(incl); };
 const toIn=ex=>{ const r=rate(); return Math.round(ex)+Math.floor(Math.round(ex)*r); };
@@ -204,9 +256,9 @@ document.addEventListener('click',e=>{ if(!e.target.closest('.sug')&&!e.target.m
 function items(){ return [...$('items').querySelectorAll('.item')].map(d=>{ const raw=d.querySelector('.un').value; const u=raw===''?null:Number(raw); return {name:d.querySelector('.nm').value.trim(),qty:Number(d.querySelector('.qt').value||1),unit:u==null?null:(S.taxIn?toEx(u):u)}; }).filter(i=>i.name||i.unit!=null); }
 function calc(){ const it=items(); const r=rate(); const sub=it.reduce((s,i)=>s+(i.unit==null?0:i.qty*i.unit),0); const tax=Math.floor(sub*r); $('total').textContent=yen(sub+tax); $('taxlbl').textContent=(r?`消費税${Math.round(r*100)}% ${yen(tax)}`:'税なし')+`　税抜 ${yen(sub)}`; }
 function clearErr(){ document.querySelectorAll('.errmsg').forEach(e=>e.classList.remove('on')); document.querySelectorAll('.in.err').forEach(e=>e.classList.remove('err')); }
-function form(){ const f={ id:S.id||'', kind:S.kind, entityId:S.entity, to:$('to').value.trim(), subject:$('subject').value.trim(), date:(isQ()?$('qdate').value:$('date').value)||todayIso(), due:$('due').value, valid:$('valid').value, items:items(), taxRate:Number($('tax').value), mail:$('mail').value.trim(), via:S.via, staff:$('staff').value, accountId:$('acct').value, note:$('note').value.trim(), recurring:(!isQ()&&S.rec)?{until:$('recuntil').value?$('recuntil').value:''}:null }; return f; }
-function save(){ if(S.id) return; try{ localStorage.setItem('bill-draft-'+S.kind,JSON.stringify(form())); }catch(e){} }
-function fill(p){ if(p.kind) setKind(p.kind); $('to').value=p.to||''; $('subject').value=p.subject||''; if(p.valid!==undefined) $('valid').value=p.valid||''; if(isQ()&&p.date) $('qdate').value=p.date; $('items').innerHTML=''; (p.items&&p.items.length?p.items:[{}]).forEach(itemRow); $('due').value=p.due||''; $('mail').value=p.mail||''; setVia(p.via||'メール'); $('note').value=p.note||''; if(p.date) $('date').value=p.date; if(p.taxRate!=null) $('tax').value=String(p.taxRate); if(p.staff) $('staff').value=p.staff; if(p.entityId) setEntity(p.entityId); if(p.accountId){ if(![...$('acct').options].some(o=>o.value===p.accountId)){ const a=(S.boot&&S.boot.accounts||[]).find(x=>x.id===p.accountId); $('acct').insertAdjacentHTML('beforeend',`<option value="${esc(p.accountId)}">${esc(a?a.label+'（'+a.name+'）':p.accountId)}</option>`); } $('acct').value=p.accountId; } S.acct=p.accountId||S.acct||''; calc(); }
+function form(){ const f={ id:S.id||'', kind:S.kind, entityId:S.entity, to:$('to').value.trim(), subject:$('subject').value.trim(), date:(isQ()?$('qdate').value:$('date').value)||todayIso(), due:$('due').value, valid:$('valid').value, items:items(), taxRate:Number($('tax').value), mail:$('mail').value.trim(), via:S.via, staff:$('staff').value, accountId:$('acct').value, note:$('note').value.trim(), recurring:(!isQ()&&S.rec)?{until:$('recuntil').value?$('recuntil').value:''}:null }; if(isSp()){ f.qtype='space'; f.space=spaceData(); f.subject=f.space.project.name; } return f; }
+function save(){ if(S.id) return; try{ localStorage.setItem('bill-draft-'+S.kind+(isSp()?'-space':''),JSON.stringify(form())); }catch(e){} }
+function fill(p){ if(p.kind) setKind(p.kind); if(p.qtype){ setQtype(p.qtype); } if(p.space){ fillSpace(p.space); } $('to').value=p.to||''; $('subject').value=p.subject||''; if(p.valid!==undefined) $('valid').value=p.valid||''; if(isQ()&&p.date) $('qdate').value=p.date; $('items').innerHTML=''; (p.items&&p.items.length?p.items:[{}]).forEach(itemRow); $('due').value=p.due||''; $('mail').value=p.mail||''; setVia(p.via||'メール'); $('note').value=p.note||''; if(p.date) $('date').value=p.date; if(p.taxRate!=null) $('tax').value=String(p.taxRate); if(p.staff) $('staff').value=p.staff; if(p.entityId) setEntity(p.entityId); if(p.accountId){ if(![...$('acct').options].some(o=>o.value===p.accountId)){ const a=(S.boot&&S.boot.accounts||[]).find(x=>x.id===p.accountId); $('acct').insertAdjacentHTML('beforeend',`<option value="${esc(p.accountId)}">${esc(a?a.label+'（'+a.name+'）':p.accountId)}</option>`); } $('acct').value=p.accountId; } S.acct=p.accountId||S.acct||''; calc(); }
 function setVia(v){ S.via=v; $('via').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); $('mailf').classList.toggle('hide',v!=='メール'); }
 function setEntity(id){ const prev=$('acct').value; S.entity=id; $('ent').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===id)); const sel=$('acct'); const list=(S.boot&&S.boot.accounts||[]).filter(a=>a.entity===id); sel.innerHTML=list.map(a=>`<option value="${esc(a.id)}">${esc(a.label)}（${esc(a.name)}）</option>`).join(''); if(list.some(a=>a.id===prev)) sel.value=prev; }
 
@@ -224,11 +276,15 @@ $('subject').addEventListener('focus',()=>suggest($('subject'),$('sug_subject'),
 $('to').addEventListener('change',()=>{ const c=(S.boot&&S.boot.clients||[]).find(x=>x.name===$('to').value.trim()); if(c){ if(c.mail&&!$('mail').value) $('mail').value=c.mail; if(c.via==='LINE') setVia('LINE'); if(c.staff) $('staff').value=c.staff; } save(); });
 $('via').querySelectorAll('button').forEach(b=>b.onclick=()=>{ setVia(b.dataset.v); save(); clearErr(); });
 $('kind').querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(S.id){ location.href=location.pathname+'?kind='+b.dataset.v; return; } const cur=form(); setKind(b.dataset.v); let d=null; try{ d=JSON.parse(localStorage.getItem('bill-draft-'+S.kind)||'null'); }catch(e){} if(d&&(d.to||d.subject||(d.items||[]).some(i=>i.name))){ fill(d); } else { fill(Object.assign(cur,{kind:S.kind,id:''})); } history.replaceState(null,'',location.pathname+(S.kind==='quote'?'?kind=quote':'')); });
-$('taxmode').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const next=b.dataset.v==='in'; if(next===S.taxIn) return; const cur=items(); S.taxIn=next; $('taxmode').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); $('items').innerHTML=''; (cur.length?cur:[{}]).forEach(itemRow); calc(); save(); try{ localStorage.setItem('bill-taxmode',next?'in':'ex'); }catch(e){} });
+$('qtype').querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(S.id){ toast('発行済みの見積は種類を変えられません'); return; } setQtype(b.dataset.v); save(); });
+$('addSec').onclick=()=>{ addSec().querySelector('.secname').focus(); save(); };
+$('addEx').onclick=()=>{ addEx('','pct',''); };
+['pjname','pjplace','pjperiod','pjterms','disc','round'].forEach(id=>$(id).addEventListener('input',()=>{ save(); clearErr(); spCalc(); }));
+$('taxmode').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const next=b.dataset.v==='in'; if(next===S.taxIn) return; const cur=items(); S.taxIn=next; $('taxmode').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); $('items').innerHTML=''; (cur.length?cur:[{}]).forEach(itemRow); calc(); if(isSp()){ const sp=spaceData(); S.taxIn=next; fillSpace(sp); } save(); try{ localStorage.setItem('bill-taxmode',next?'in':'ex'); }catch(e){} });
 $('rec').onclick=()=>{ S.rec=!S.rec; $('rec').classList.toggle('on',S.rec); $('recopt').classList.toggle('hide',!S.rec); save(); };
 $('addItem').onclick=()=>{ itemRow().querySelector('.nm').focus(); };
 ['to','subject','due','mail','note','date','tax','staff','acct','recuntil'].forEach(id=>$(id).addEventListener('input',()=>{ save(); clearErr(); if(id==='tax') calc(); }));
-$('clear').onclick=()=>{ const prev=form(); fill({items:[{}],due:endOfNextMonth(),date:todayIso(),valid:plus30()}); try{ localStorage.removeItem('bill-draft-'+S.kind); }catch(e){} toast('消しました',()=>{ fill(prev); save(); }); };
+$('clear').onclick=()=>{ const prev=form(); fill({items:[{}],due:endOfNextMonth(),date:todayIso(),valid:plus30(),space:isSp()?{}:undefined}); try{ localStorage.removeItem('bill-draft-'+S.kind); }catch(e){} toast('消しました',()=>{ fill(prev); save(); }); };
 
 $('photo').onchange=async()=>{
   const files=[...$('photo').files].slice(0,4); if(!files.length) return;
@@ -248,8 +304,9 @@ function validate(){
   clearErr(); let ok=true, first=null;
   const bad=(id,eid)=>{ ok=false; $(id).classList.add('err'); $(eid).classList.add('on'); first=first||$(id); };
   if(!$('to').value.trim()) bad('to','e_to');
-  if(!$('subject').value.trim()){ const it0=items()[0]; if(it0&&it0.name) $('subject').value=it0.name; else bad('subject','e_subject'); }
-  const it=items(); if(!it.length||it.some(i=>!i.name||i.unit==null||isNaN(i.unit))){ ok=false; $('e_items').classList.add('on'); first=first||$('items'); }
+  if(!isSp()&&!$('subject').value.trim()){ const it0=items()[0]; if(it0&&it0.name) $('subject').value=it0.name; else bad('subject','e_subject'); }
+  if(isSp()){ if(!$('pjname').value.trim()) bad('pjname','e_pjname'); const sp=spaceData(); const okSec=sp.sections.length&&sp.sections.every(s=>s.name&&s.items.some(i=>i.name))&&sp.sections.every(s=>s.items.filter(i=>i.name).every(i=>i.price!=null&&!isNaN(i.price))); if(!okSec){ ok=false; $('e_secs').classList.add('on'); first=first||$('secs'); } }
+  else { const it=items(); if(!it.length||it.some(i=>!i.name||i.unit==null||isNaN(i.unit))){ ok=false; $('e_items').classList.add('on'); first=first||$('items'); } }
   if(S.via==='メール'&&!/^[^@\s]+@[^@\s]+\.[^@\s]+(\s*,\s*[^@\s]+@[^@\s]+\.[^@\s]+)*$/.test($('mail').value.trim())) bad('mail','e_mail');
   if(!ok&&first) first.scrollIntoView({behavior:'smooth',block:'center'});
   return ok;
@@ -260,9 +317,9 @@ $('issue').onclick=async()=>{
   const btn=$('issue'); const pg=progress(btn,S.id?'更新中':'発行中',14);
   try{
     const p=form(); if(S.force) p.force=true;
-    const r=await call(isQ()?'api_issueQuote':'api_issueInvoice',p);
+    const r=await call(isSp()?'api_issueSpaceQuote':isQ()?'api_issueQuote':'api_issueInvoice',p);
     if(r.duplicate){ pg.fail(); $('dup').classList.remove('hide'); $('dup').innerHTML=`同じ請求がもうあります: <b>${esc(r.subject)}</b> ${yen(r.total)}（${esc(r.status)}・${esc(r.id)}）<div class="row" style="margin-top:8px"><button class="btn" type="button" id="dupopen">そちらを開く</button><button class="btn" type="button" id="dupforce">別の請求として発行</button></div>`; $('dupopen').onclick=()=>{ location.href=`?id=${encodeURIComponent(r.id)}&step=preview`; }; $('dupforce').onclick=()=>{ S.force=true; $('dup').classList.add('hide'); $('issue').click(); }; window.scrollTo({top:0,behavior:'smooth'}); return; }
-    S.force=false; const wasEdit=!!S.id; S.id=r.id; S.inv=Object.assign(r,{updated:wasEdit}); try{ localStorage.removeItem('bill-draft-'+S.kind); }catch(e){}
+    S.force=false; const wasEdit=!!S.id; S.id=r.id; S.inv=Object.assign(r,{updated:wasEdit}); try{ localStorage.removeItem('bill-draft-'+S.kind+(isSp()?'-space':'')); }catch(e){}
     history.replaceState(null,'',`?id=${encodeURIComponent(r.id)}&step=preview`);
     pg.done(); showPreview(r); toast(wasEdit?'更新しました':'発行しました');
   }catch(e){ pg.fail(); toast('発行できませんでした: '+(e.message||e)); }
@@ -274,7 +331,7 @@ function showPreview(r){
   const w=$('prevwrap').clientWidth||360; const sc=w/794; f.style.transform=`scale(${sc})`; $('prevwrap').style.height=Math.round(1123*sc)+'px';
   const sendBtn=$('send'); sendBtn.innerHTML=`<span>${r.via==='メール'?'メールで送る':'LINEで送る'}</span>`; sendBtn.dataset.l=sendBtn.innerHTML;
   $('toinv').classList.toggle('hide',!isQ()); if(isQ()&&r.invoiceId){ $('toinv').textContent='請求書 '+r.invoiceId+' を開く'; } else if(isQ()) $('toinv').textContent='請求書にする';
-  const ln=$('linenote'); if(ln){ if(isQ()){ ln.innerHTML=`見積書を発行しました${r.valid?`（有効期限 ${esc(r.valid)}）`:''}。受注したら「請求書にする」で同じ内容の請求書を作れます。`; } else ln.innerHTML = r.card ? `<b style="color:var(--ok)">LINEにカードを送信済み</b>（${esc(r.pushedAt||'')}・${r.card}人: 担当${r.staff?' '+esc(r.staff):''}と吉田）。この画面を閉じてもカードから送信できます。編集して発行し直しても請求書は1枚のままで、古いPDFは消えます。` : (r.pushedAt===undefined ? '' : '<span style="color:var(--warn)">LINEへのカード送信ができませんでした。この画面から送ってください。</span>'); }
+  const ln=$('linenote'); if(ln){ if(isQ()){ ln.innerHTML=`見積書を発行しました${r.valid?`（有効期限 ${esc(r.valid)}）`:''}。${isSp()?'PDFは 表紙・総括・工種ごとの明細 の構成です。':''}受注したら「請求書にする」で同じ内容の請求書を作れます。`; } else ln.innerHTML = r.card ? `<b style="color:var(--ok)">LINEにカードを送信済み</b>（${esc(r.pushedAt||'')}・${r.card}人: 担当${r.staff?' '+esc(r.staff):''}と吉田）。この画面を閉じてもカードから送信できます。編集して発行し直しても請求書は1枚のままで、古いPDFは消えます。` : (r.pushedAt===undefined ? '' : '<span style="color:var(--warn)">LINEへのカード送信ができませんでした。この画面から送ってください。</span>'); }
   const sent=isQ()?false:['送付済','未入金','催促中','入金済'].includes(r.status);
   sendBtn.disabled=sent; if(sent) sendBtn.innerHTML='<span>送付済み</span>';
   show('scrPrev');
@@ -327,7 +384,7 @@ $('del').onclick=()=>{
   if(!S.boot){ $('status').innerHTML='<div class="skel"></div><div class="skel" style="width:60%"></div>'; }
   setKind(S.kind);
   if(S.id){ fill({items:[{}]}); $('ttl').textContent=isQ()?'見積書':'請求書'; veil((isQ()?'見積書':'請求書')+'を読み込んでいます',6); }
-  else { let d=null; try{ d=JSON.parse(localStorage.getItem('bill-draft-'+S.kind)||'null'); }catch(e){} fill(d&&(d.to||d.subject||(d.items||[]).some(i=>i.name))?Object.assign(d,{kind:S.kind}):{items:[{}],due:endOfNextMonth(),date:todayIso(),valid:plus30()}); if(d&&d.recurring){ S.rec=true; $('rec').classList.add('on'); $('recopt').classList.remove('hide'); $('recuntil').value=d.recurring.until||''; } }
+  else { let d=null; try{ d=JSON.parse(localStorage.getItem('bill-draft-'+S.kind+(isSp()?'-space':''))||'null'); }catch(e){} fill(d&&(d.to||d.subject||(d.items||[]).some(i=>i.name)||(d.space&&d.space.project&&d.space.project.name))?Object.assign(d,{kind:S.kind}):{items:[{}],due:endOfNextMonth(),date:todayIso(),valid:plus30(),space:isSp()?{}:undefined}); if(d&&d.recurring){ S.rec=true; $('rec').classList.add('on'); $('recopt').classList.remove('hide'); $('recuntil').value=d.recurring.until||''; } }
   if(LIFF_ID&&window.liff){ try{ await liff.init({liffId:LIFF_ID}); }catch(e){} }
   const bootP=call('api_billBoot').then(b=>{ S.boot=b; try{ localStorage.setItem('bill-boot',JSON.stringify(b)); }catch(e){} const keep=form(); renderBoot(); if(keep.entityId) setEntity(keep.entityId); if(keep.staff) $('staff').value=keep.staff; if(keep.accountId) $('acct').value=keep.accountId; $('status').textContent=''; }).catch(e=>{ $('status').textContent='取引先の一覧を取れませんでした。入力はできます'; });
   if(!S.id) await bootP;
