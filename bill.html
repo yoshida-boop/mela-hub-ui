@@ -146,9 +146,9 @@ button,select,input,textarea{font:inherit;color:inherit}
     <label class="f inv-only"><span>支払期日</span><input class="in" id="due" type="date"></label>
     <div class="row quote-only hide"><label class="f" style="flex:1"><span>見積日</span><input class="in" id="qdate" type="date"></label><label class="f" style="flex:1"><span>有効期限</span><input class="in" id="valid" type="date"></label></div>
     <div class="f"><span>送り方</span><div class="seg" id="via"><button type="button" data-v="メール" class="on">メール</button><button type="button" data-v="LINE">LINE</button></div></div>
-    <div class="f" id="mailf"><span>送付先メール（複数可。Enter・カンマ・スペースで区切り）</span><div class="mails" id="mailbox"><input id="mail" type="email" inputmode="email" placeholder="example@company.jp" autocomplete="off" autocapitalize="off"></div><div class="errmsg" id="e_mail">メールで送るなら宛先を正しく入れてください</div>
+    <div class="f" id="mailf"><span>送付先メール（複数可。Enter・カンマ・スペースで区切り）</span><div class="mails" id="mailbox"><input id="mail" type="text" inputmode="email" placeholder="example@company.jp" autocomplete="off" autocapitalize="off" spellcheck="false"></div><div class="errmsg" id="e_mail">メールで送るなら宛先を正しく入れてください</div>
       <button type="button" class="cclink" id="ccshow">＋ CC を追加</button>
-      <div id="ccf" class="hide"><span style="display:block;font-size:12.5px;color:var(--ink2);margin:6px 0 4px">CC（invoice@ は自動で入ります）</span><div class="mails" id="ccbox"><input id="cc" type="email" inputmode="email" placeholder="cc@company.jp" autocomplete="off" autocapitalize="off"></div></div></div>
+      <div id="ccf" class="hide"><span style="display:block;font-size:12.5px;color:var(--ink2);margin:6px 0 4px">CC（invoice@ は自動で入ります）</span><div class="mails" id="ccbox"><input id="cc" type="text" inputmode="email" placeholder="cc@company.jp" autocomplete="off" autocapitalize="off" spellcheck="false"></div></div></div>
     <div class="tog inv-only"><div><b>毎月この内容で請求する</b><div class="note">最終週の月曜に自動で作り、LINEに届きます</div></div><button class="sw" id="rec" type="button" aria-label="毎月"><i></i></button></div>
     <div id="recopt" class="hide inv-only" style="margin-top:8px"><label class="f"><span>いつまで（空欄なら続く限り）</span><input class="in" id="recuntil" type="month"></label></div>
   </div>
