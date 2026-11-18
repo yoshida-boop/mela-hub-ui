@@ -98,6 +98,14 @@ details.card>summary{list-style:none}details.card>summary::-webkit-details-marke
 details.card>summary::after{content:'▾';margin-left:6px;color:var(--mute)}
 details.card[open]>summary::after{content:'▴'}
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+tr.saving td{opacity:.55}tr.saving .stsel{background:var(--grey)}
+tr.done td{background:var(--okbg)}tr.done .stnote{font-size:11.5px;color:var(--ok);display:block;margin-top:2px}
+tr.failed td{background:var(--badbg)}
+.apchk{width:18px;height:18px;accent-color:var(--acc);cursor:pointer;vertical-align:middle}
+.bulkbar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%) translateY(120%);background:var(--ink);color:#fff;border-radius:14px;padding:10px 14px;display:flex;gap:8px;align-items:center;z-index:60;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:transform .2s;max-width:94vw;flex-wrap:wrap;justify-content:center}
+.bulkbar.on{transform:translateX(-50%) translateY(0)}
+.bulkbar b{margin-right:4px;white-space:nowrap}.bulkbar button{border:1px solid rgba(255,255,255,.35);background:none;color:#fff;border-radius:10px;padding:7px 12px;font-size:13px;cursor:pointer;white-space:nowrap}.bulkbar button.pri{background:var(--acc);border-color:var(--acc);font-weight:700}.bulkbar button:disabled{opacity:.5}
+.toastundo{color:#FFB8A8;font-weight:700;border:0;background:none;padding:0 0 0 10px;cursor:pointer}
 table{border-collapse:collapse;width:100%;font-size:13px}
 th,td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:middle}
 th{font-size:11.5px;color:var(--mute);font-weight:500}
@@ -193,6 +201,7 @@ textarea.mail{width:100%;min-height:260px;border:1px solid var(--line2);border-r
   <main class="main" id="main"><div class="empty">読み込み中…</div></main>
 </div>
 <div id="toast"></div>
+<div class="bulkbar" id="bulkbar"><b id="bulkn"></b><button type="button" data-st="支払済" class="pri">支払済にする</button><button type="button" data-st="支払予定">支払予定にする</button><button type="button" data-st="対象外">対象外にする</button><button type="button" id="bulkclear">選択を外す</button></div>
 <script>
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwXOKcewGxJTEUf2IfNTWgElPXqFvfZVHpkKEwWFNn3nUMzqwkuDBtO7sHXsmqeaQIK/exec';
 let CODE = 'q3sqawj3';
@@ -219,7 +228,7 @@ const S = { view:'home', sub:{}, boot:null, ar:[], ap:[], line:[], expenses:[], 
 })();
 const subOf = v => S.sub[v] || (SUBS[v] ? SUBS[v][0][0] : null);
 
-const BUILD='2026-11-13b';
+const BUILD='2026-11-18a';
 (async()=>{ try{ const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text(); const m=t.match(/const BUILD='([^']+)'/); if(m&&m[1]!==BUILD){ location.reload(); } }catch(e){} })();
 const yen = n => n==null||n===''||isNaN(n) ? '—' : '¥'+Math.round(Number(n)).toLocaleString('ja-JP');
 const pill = s => `<span class="pill ${PILL[s]||'p-grey'}">${s||'—'}</span>`;
@@ -237,7 +246,7 @@ async function call(fn, ...args){
 }
 window.addEventListener('unhandledrejection', e=>{ try{ toast('エラー: '+((e.reason&&e.reason.message)||e.reason)); }catch(_){} });
 window.addEventListener('error', e=>{ try{ toast('エラー: '+(e.message||'不明')); }catch(_){} });
-function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),4000); }
+function toast(m,undo){ const t=document.getElementById('toast'); t.textContent=m; if(undo){ const b=document.createElement('button'); b.className='toastundo'; b.textContent='元に戻す'; b.onclick=()=>{ t.classList.remove('on'); undo(); }; t.appendChild(b); } t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),undo?7000:4000); }
 function daysLate(r){ if(!r['支払期日']) return 0; return Math.floor((new Date(S.boot.today)-new Date(r['支払期日']))/86400000); }
 const isUnpaid = r => ['送付済','未入金','催促中'].includes(r['状態']);
 
@@ -292,7 +301,7 @@ function renderNav(){
     if(b.dataset.s==='new'){ location.href='bill.html'; return; }
     if(b.dataset.s==='qnew'){ location.href='bill.html?kind=quote'; return; }
     if(b.dataset.s) S.sub[v]=b.dataset.s;
-    S.view=v; closeDrawer(); render();
+    S.view=v; closeDrawer(); render(); const bb=document.getElementById('bulkbar'); if(bb) bb.classList.remove('on');
   });
   const t=document.getElementById('topttl');
   if(t){ const label=(VIEWS.find(x=>x[0]===S.view)||[])[1]||'';
@@ -842,7 +851,7 @@ const monthLabel = m => m==='未定' ? '金額・期日が読めていないも�
 function apRows(rows){
   return rows.map(r=>{
     const late = !['支払済','対象外'].includes(r['状態']) && ymd(r['支払期日']) && ymd(r['支払期日'])<S.boot.today;
-    return `<tr><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td>
+    return `<tr data-id="${esc(r['受領ID'])}"><td><input type="checkbox" class="apchk" data-id="${esc(r['受領ID'])}" aria-label="選択"></td><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td>
     <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis">${esc(r['件名'])}</td>
     <td style="${late?'color:var(--bad);font-weight:700':''}">${ymd(r['支払期日'])||'—'}${late?' 超過':''}</td>
     <td class="r">${yen(r['税込金額'])}</td>
@@ -855,7 +864,7 @@ function apTableFill(rows){
   return `<div class="tw"><table><tr><th>会社</th><th>取引先</th><th>件名</th><th>請求書</th><th>支払期日</th><th class="r">税込金額</th><th>状態</th><th></th></tr>
   ${rows.map(r=>{
     const link=String(r['PDF']||'').split('\n')[0];
-    return `<tr><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td>
+    return `<tr data-id="${esc(r['受領ID'])}"><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td>
     <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${esc(r['件名'])}</td>
     <td>${link?`<a href="${esc(link)}" target="_blank">開く</a>`:'<span style="color:var(--mute)">添付なし</span>'}</td>
     <td><input type="date" class="sel apfill" data-id="${esc(r['受領ID'])}" data-col="支払期日" style="width:150px;padding:4px 7px;font-size:12px"></td>
@@ -866,7 +875,7 @@ function apTableFill(rows){
   <div class="note">リンク先からPDFをダウンロードして「PDFを付ける」で選ぶと、金額・期日を読み取って入れます（写真でも可）。</div><input type="file" id="apfile" accept="application/pdf,image/*" style="display:none">`;
 }
 function apTable(rows){
-  return `<div class="tw"><table><tr><th>会社</th><th>取引先</th><th>件名</th><th>支払期日</th><th class="r">税込</th><th>状態</th><th>PDF</th></tr>${apRows(rows)}</table></div>`;
+  return `<div class="tw"><table><tr><th></th><th>会社</th><th>取引先</th><th>件名</th><th>支払期日</th><th class="r">税込</th><th>状態</th><th>PDF</th></tr>${apRows(rows)}</table></div>`;
 }
 
 function vAp(){
@@ -993,6 +1002,27 @@ function toggleMic(){
   try{ REC.start(); }catch(e){ micUI(false,'マイクを起動できませんでした'); }
 }
 
+/* 状態変更: 画面はその場で更新し、行はその場に残して「保存中→済」を見せる。消えるのは次に開いたとき */
+const localRows=(sheet)=> sheet==='売掛台帳'?S.ar:S.ap;
+const idColOf=(sheet)=> sheet==='売掛台帳'?'請求ID':'受領ID';
+async function changeStatus(sheet,idCol,ids,status,sel){
+  const rowsEl=ids.map(id=>document.querySelector(`tr[data-id="${CSS.escape(id)}"]`)).filter(Boolean);
+  const prev={}; ids.forEach(id=>{ const r=localRows(sheet).find(x=>String(x[idCol])===String(id)); if(r){ prev[id]=r['状態']; r['状態']=status; if(status==='支払済'&&!r['支払日']) r['支払日']=S.boot.today; if(status==='入金済'&&!r['入金日']) r['入金日']=S.boot.today; } });
+  rowsEl.forEach(tr=>{ tr.classList.remove('done','failed'); tr.classList.add('saving'); const sl=tr.querySelector('.stsel'); if(sl){ sl.value=status; sl.disabled=true; } });
+  try{
+    if(ids.length===1) await call('api_setStatus',sheet,idCol,ids[0],status); else await call('api_setStatusBulk',sheet,idCol,ids,status);
+    rowsEl.forEach(tr=>{ tr.classList.remove('saving'); tr.classList.add('done'); const sl=tr.querySelector('.stsel'); if(sl){ sl.disabled=false; let n=tr.querySelector('.stnote'); if(!n){ n=document.createElement('span'); n.className='stnote'; sl.parentNode.appendChild(n); } n.textContent=`✓ ${status}にしました`; } const ck=tr.querySelector('.apchk'); if(ck) ck.checked=false; });
+    updateBulkBar(); renderNav(); try{ const c=cacheLoad(); if(c&&c.d){ c.d.ar=S.ar; c.d.ap=S.ap; cacheSave(c.d); } }catch(e){}
+    toast(ids.length===1?`${status}にしました`:`${ids.length}件を${status}にしました`, ()=>{ const groups={}; ids.forEach(id=>{ (groups[prev[id]]=groups[prev[id]]||[]).push(id); }); Object.keys(groups).forEach(st=>changeStatus(sheet,idCol,groups[st],st)); });
+  }catch(e){
+    ids.forEach(id=>{ const r=localRows(sheet).find(x=>String(x[idCol])===String(id)); if(r) r['状態']=prev[id]; });
+    rowsEl.forEach(tr=>{ tr.classList.remove('saving'); tr.classList.add('failed'); const sl=tr.querySelector('.stsel'); if(sl){ sl.disabled=false; sl.value=prev[sl.dataset.id]||sl.value; } });
+    toast('保存できませんでした: '+(e.message||e));
+  }
+}
+function selectedAp(){ return [...document.querySelectorAll('.apchk:checked')].map(c=>c.dataset.id); }
+function updateBulkBar(){ const bar=document.getElementById('bulkbar'); const n=selectedAp().length; bar.classList.toggle('on',n>0); document.getElementById('bulkn').textContent=n?`${n}件を選択中`:''; }
+(function(){ const bar=document.getElementById('bulkbar'); if(!bar) return; bar.querySelectorAll('button[data-st]').forEach(b=>b.onclick=async()=>{ const ids=selectedAp(); if(!ids.length) return; bar.querySelectorAll('button').forEach(x=>x.disabled=true); await changeStatus('買掛台帳','受領ID',ids,b.dataset.st); bar.querySelectorAll('button').forEach(x=>x.disabled=false); }); const c=document.getElementById('bulkclear'); if(c) c.onclick=()=>{ document.querySelectorAll('.apchk:checked').forEach(x=>x.checked=false); updateBulkBar(); }; })();
 function busy(b){ S.busy=b; document.querySelectorAll('.btn.pri').forEach(x=>x.disabled=b); }
 // 生成中は画面全体を覆って「止まっていない」ことを見せる。経過秒が動くのが要点
 let _wk=null;
@@ -1055,7 +1085,8 @@ function renderInner(){
   m.querySelectorAll('.subnav button').forEach(b=>b.onclick=()=>{stopMic();S.sub[S.view]=b.dataset.s;render();});
   m.querySelectorAll('.qb,.kpi').forEach(a=>a.onclick=()=>{ S.view=a.dataset.v; if(a.dataset.s) S.sub[a.dataset.v]=a.dataset.s; render(); window.scrollTo(0,0); });
   m.querySelectorAll('tr.row').forEach(tr=>tr.onclick=ev=>{ if(ev.target.closest('select,a,button')) return; if(tr.dataset.q){ S.qsel=tr.dataset.id; S.qedit=null; } else S.sel=tr.dataset.id; if(tr.dataset.v){S.view=tr.dataset.v; if(tr.dataset.s) S.sub[tr.dataset.v]=tr.dataset.s;} render(); });
-  m.querySelectorAll('.stsel').forEach(s=>s.onchange=async()=>{ try{ await call('api_setStatus',s.dataset.sheet,s.dataset.col,s.dataset.id,s.value); toast('更新しました'); await refresh(); }catch(e){ toast('失敗: '+(e.message||e)); } });
+  m.querySelectorAll('.stsel').forEach(s=>s.onchange=()=>changeStatus(s.dataset.sheet,s.dataset.col,[s.dataset.id],s.value,s));
+  m.querySelectorAll('.apchk').forEach(c=>c.onchange=updateBulkBar);
   m.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{S.filter=b.dataset.f;render();});
   bindSegs();
   const is=document.getElementById('invsel'); if(is) is.onchange=()=>{S.sel=is.value;render();};
