@@ -228,7 +228,7 @@ const S = { view:'home', sub:{}, boot:null, ar:[], ap:[], line:[], expenses:[], 
 })();
 const subOf = v => S.sub[v] || (SUBS[v] ? SUBS[v][0][0] : null);
 
-const BUILD='2026-11-18a';
+const BUILD='2026-11-18b';
 (async()=>{ try{ const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text(); const m=t.match(/const BUILD='([^']+)'/); if(m&&m[1]!==BUILD){ location.reload(); } }catch(e){} })();
 const yen = n => n==null||n===''||isNaN(n) ? '—' : '¥'+Math.round(Number(n)).toLocaleString('ja-JP');
 const pill = s => `<span class="pill ${PILL[s]||'p-grey'}">${s||'—'}</span>`;
@@ -861,10 +861,10 @@ function apRows(rows){
 }
 // freee・マネーフォワードのリンク型はログインが要るので機械では取れない。ここで手入力できるようにする
 function apTableFill(rows){
-  return `<div class="tw"><table><tr><th>会社</th><th>取引先</th><th>件名</th><th>請求書</th><th>支払期日</th><th class="r">税込金額</th><th>状態</th><th></th></tr>
+  return `<div class="tw"><table><tr><th></th><th>会社</th><th>取引先</th><th>件名</th><th>請求書</th><th>支払期日</th><th class="r">税込金額</th><th>状態</th><th></th></tr>
   ${rows.map(r=>{
     const link=String(r['PDF']||'').split('\n')[0];
-    return `<tr data-id="${esc(r['受領ID'])}"><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td>
+    return `<tr data-id="${esc(r['受領ID'])}"><td><input type="checkbox" class="apchk" data-id="${esc(r['受領ID'])}" aria-label="選択"></td><td>${entTag(r['法人'])}</td><td>${esc(r['取引先'])}</td>
     <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${esc(r['件名'])}</td>
     <td>${link?`<a href="${esc(link)}" target="_blank">開く</a>`:'<span style="color:var(--mute)">添付なし</span>'}</td>
     <td><input type="date" class="sel apfill" data-id="${esc(r['受領ID'])}" data-col="支払期日" style="width:150px;padding:4px 7px;font-size:12px"></td>
